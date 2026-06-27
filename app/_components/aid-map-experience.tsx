@@ -23,7 +23,14 @@ import {
   UsersRound,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { GoogleAidMap } from "@/app/_components/google-aid-map";
 import type {
   AidCategory,
@@ -86,6 +93,7 @@ export function AidMapExperience({
   const [isUpdatesModalOpen, setIsUpdatesModalOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedCenterId, setSelectedCenterId] = useState<string>();
+  const mobileCenterDetailsRef = useRef<HTMLElement | null>(null);
 
   const categoryById = useMemo(
     () => new Map(categories.map((category) => [category.id, category])),
@@ -152,6 +160,30 @@ export function AidMapExperience({
     setSelectedCenterId(centerId);
     setIsCenterPanelExpanded(false);
   }, []);
+
+  const clearSelectedCenter = useCallback(() => {
+    setSelectedCenterId(undefined);
+    setIsCenterPanelExpanded(false);
+  }, []);
+
+  useEffect(() => {
+    if (!isCenterPanelExpanded || !selectedCenterId) {
+      return;
+    }
+
+    const isMobile = window.matchMedia("(max-width: 1023px)").matches;
+
+    if (!isMobile) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      mobileCenterDetailsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }, [isCenterPanelExpanded, selectedCenterId]);
 
   const visibleCenterIds = useMemo(
     () => new Set(filteredCenters.map((center) => center.id)),
@@ -266,7 +298,7 @@ export function AidMapExperience({
         </section>
 
         <section className="order-1 lg:sticky lg:top-0 lg:order-2 lg:h-dvh lg:p-5">
-          <div className="relative h-[78dvh] min-h-[620px] overflow-hidden rounded-b-[28px] border-b border-[#17324d]/10 bg-[#c9eee3] shadow-[0_24px_80px_rgba(23,50,77,0.16)] lg:h-full lg:min-h-0 lg:rounded-[12px] lg:border">
+          <div className="relative h-[68dvh] min-h-[430px] max-h-[640px] overflow-hidden rounded-b-[24px] border-b border-[#17324d]/10 bg-[#c9eee3] shadow-[0_24px_80px_rgba(23,50,77,0.16)] sm:min-h-[520px] lg:h-full lg:max-h-none lg:min-h-0 lg:rounded-[12px] lg:border">
             <GoogleAidMap
               categoryById={categoryById}
               centers={cityCenters}
@@ -310,15 +342,38 @@ export function AidMapExperience({
                 center={selectedCenter}
                 categoryById={categoryById}
                 expanded={isCenterPanelExpanded}
+                onClear={clearSelectedCenter}
+                onOpenUpdates={openUpdatesModal}
                 onToggleExpanded={() =>
                   setIsCenterPanelExpanded((expanded) => !expanded)
                 }
-                onOpenUpdates={openUpdatesModal}
               />
             ) : filteredCenters.length === 0 ? (
               <EmptyCenterPanel />
             ) : null}
           </div>
+
+          {selectedCenter ? (
+            <SelectedCenterPreview
+              center={selectedCenter}
+              categoryById={categoryById}
+              expanded={isCenterPanelExpanded}
+              onClear={clearSelectedCenter}
+              onOpenUpdates={openUpdatesModal}
+              onToggleExpanded={() =>
+                setIsCenterPanelExpanded((expanded) => !expanded)
+              }
+            />
+          ) : null}
+
+          {selectedCenter && isCenterPanelExpanded ? (
+            <SelectedCenterDetails
+              center={selectedCenter}
+              categoryById={categoryById}
+              onOpenUpdates={openUpdatesModal}
+              ref={mobileCenterDetailsRef}
+            />
+          ) : null}
         </section>
       </div>
 
@@ -480,171 +535,390 @@ function CenterListItem({
   );
 }
 
-function SelectedCenterPanel({
+function getCenterRouteHref(center: AidCenter) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    `${center.name}, ${center.address}`,
+  )}`;
+}
+
+function getContactHref(publicContact: string) {
+  if (publicContact.includes("@")) {
+    return `mailto:${publicContact}`;
+  }
+
+  const phone = publicContact.replace(/[^\d+]/g, "");
+
+  return phone ? `tel:${phone}` : undefined;
+}
+
+function CenterBadges({
+  center,
+  categoryById,
+}: {
+  center: AidCenter;
+  categoryById: Map<AidCategoryId, AidCategory>;
+}) {
+  const primaryCategory = categoryById.get(center.categories[0]);
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="rounded-full bg-[#ef6f61]/12 px-2 py-1 text-[11px] font-black uppercase tracking-normal text-[#ef6f61]">
+        {center.neighborhood}
+      </span>
+      {primaryCategory ? (
+        <span
+          className="rounded-full px-2 py-1 text-[11px] font-black text-[#17324d]"
+          style={{ background: primaryCategory.surface }}
+        >
+          {primaryCategory.shortLabel}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function CenterInfoRows({ center }: { center: AidCenter }) {
+  return (
+    <div className="grid gap-1.5 text-xs font-bold text-[#49656f]">
+      <p className="flex min-w-0 items-center gap-2">
+        <MapPin aria-hidden="true" className="shrink-0 text-[#24a7a1]" size={15} />
+        <span className="truncate">{center.address}</span>
+      </p>
+      <p className="flex min-w-0 items-center gap-2">
+        <CheckCircle2
+          aria-hidden="true"
+          className="shrink-0 text-[#5cb85c]"
+          size={15}
+        />
+        <span className="truncate">{center.hours}</span>
+      </p>
+    </div>
+  );
+}
+
+function CenterImpactGrid({ center }: { center: AidCenter }) {
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      <ImpactMiniStat label="Visitas" value={center.impact.visits} />
+      <ImpactMiniStat label="Kg ayuda" value={center.impact.suppliesKg} />
+      <ImpactMiniStat label="Familias" value={center.impact.families} />
+    </div>
+  );
+}
+
+function CenterCategoryTags({
+  center,
+  categoryById,
+}: {
+  center: AidCenter;
+  categoryById: Map<AidCategoryId, AidCategory>;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {center.categories.map((categoryId) => {
+        const category = categoryById.get(categoryId);
+
+        return (
+          <span
+            className="rounded-full px-2.5 py-1 text-xs font-black text-[#17324d]"
+            key={categoryId}
+            style={{ background: category?.surface }}
+          >
+            {category?.label}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+function CenterActions({
+  center,
+  onOpenUpdates,
+}: {
+  center: AidCenter;
+  onOpenUpdates: () => void;
+}) {
+  const contactHref = getContactHref(center.publicContact);
+  const contactIcon = center.publicContact.includes("@") ? (
+    <Mail aria-hidden="true" size={15} />
+  ) : (
+    <Phone aria-hidden="true" size={15} />
+  );
+  const actionClass =
+    "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[8px] px-2 text-xs font-black transition hover:-translate-y-0.5";
+
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      <button
+        className={`${actionClass} bg-[#24a7a1] text-white`}
+        onClick={onOpenUpdates}
+        type="button"
+      >
+        <Bell aria-hidden="true" size={15} />
+        Al tanto
+      </button>
+      <a
+        className={`${actionClass} bg-[#17324d] text-white`}
+        href={getCenterRouteHref(center)}
+        rel="noreferrer"
+        target="_blank"
+      >
+        <Navigation aria-hidden="true" size={15} />
+        Ruta
+      </a>
+      {contactHref ? (
+        <a
+          className={`${actionClass} border border-[#17324d]/15 bg-white text-[#17324d]`}
+          href={contactHref}
+        >
+          {contactIcon}
+          Contacto
+        </a>
+      ) : (
+        <span
+          aria-disabled="true"
+          className={`${actionClass} border border-[#17324d]/15 bg-white text-[#17324d]/55`}
+        >
+          {contactIcon}
+          Contacto
+        </span>
+      )}
+    </div>
+  );
+}
+
+function CenterDefinitionList({ center }: { center: AidCenter }) {
+  return (
+    <dl className="grid gap-3 text-sm">
+      <div>
+        <dt className="font-black text-[#17324d]">Direccion</dt>
+        <dd className="mt-1 text-[#49656f]">{center.address}</dd>
+      </div>
+      <div>
+        <dt className="font-black text-[#17324d]">Horario</dt>
+        <dd className="mt-1 text-[#49656f]">{center.hours}</dd>
+      </div>
+      <div>
+        <dt className="font-black text-[#17324d]">Requisitos</dt>
+        <dd className="mt-1 text-[#49656f]">{center.requirements}</dd>
+      </div>
+      <div>
+        <dt className="font-black text-[#17324d]">Contacto publico</dt>
+        <dd className="mt-1 text-[#49656f]">{center.publicContact}</dd>
+      </div>
+      <div>
+        <dt className="font-black text-[#17324d]">Estado</dt>
+        <dd className="mt-1 text-[#49656f]">{center.verifiedAt}</dd>
+      </div>
+    </dl>
+  );
+}
+
+function SelectedCenterPreview({
   center,
   categoryById,
   expanded,
+  onClear,
   onToggleExpanded,
   onOpenUpdates,
 }: {
   center: AidCenter;
   categoryById: Map<AidCategoryId, AidCategory>;
   expanded: boolean;
+  onClear: () => void;
   onToggleExpanded: () => void;
   onOpenUpdates: () => void;
 }) {
-  const primaryCategory = categoryById.get(center.categories[0]);
-
   return (
-    <aside
-      className={`absolute bottom-3 left-3 right-3 z-20 overflow-hidden rounded-[16px] border border-white/75 bg-[#fffbf2]/96 p-3 shadow-[0_18px_58px_rgba(23,50,77,0.18)] backdrop-blur transition-[max-height] duration-200 sm:p-4 lg:bottom-5 lg:left-auto lg:right-5 lg:max-h-[calc(100dvh-2.5rem)] lg:w-[380px] lg:overflow-y-auto ${
-        expanded ? "max-h-[56dvh] overflow-y-auto" : "max-h-[245px]"
-      }`}
-    >
-      <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-[#17324d]/20 lg:hidden" />
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="rounded-full bg-[#ef6f61]/12 px-2 py-1 text-[11px] font-black uppercase tracking-normal text-[#ef6f61]">
-              {center.neighborhood}
-            </span>
-            {primaryCategory ? (
-              <span
-                className="rounded-full px-2 py-1 text-[11px] font-black text-[#17324d]"
-                style={{ background: primaryCategory.surface }}
-              >
-                {primaryCategory.shortLabel}
-              </span>
-            ) : null}
-          </div>
-          <h2 className="mt-1 text-xl font-black leading-tight text-[#17324d]">
+    <aside className="mx-4 mt-3 rounded-[12px] border border-[#17324d]/10 bg-[#fffbf2] p-3 shadow-sm lg:hidden">
+      <div className="flex items-start gap-3">
+        <span className="grid size-11 shrink-0 place-items-center rounded-[8px] bg-[#d7f8f2] text-[#17324d]">
+          <MapPin aria-hidden="true" size={20} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <CenterBadges center={center} categoryById={categoryById} />
+          <h2 className="mt-1 truncate text-base font-black leading-tight text-[#17324d]">
             {center.name}
           </h2>
+          <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs font-bold text-[#49656f]">
+            <CheckCircle2
+              aria-hidden="true"
+              className="shrink-0 text-[#5cb85c]"
+              size={14}
+            />
+            <span className="truncate">{center.verifiedAt}</span>
+          </p>
         </div>
         <button
+          aria-label="Cerrar centro seleccionado"
+          className="grid size-9 shrink-0 place-items-center rounded-[8px] border border-[#17324d]/10 bg-white text-[#17324d]"
+          onClick={onClear}
+          type="button"
+        >
+          <X aria-hidden="true" size={16} />
+        </button>
+      </div>
+
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <button
+          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[8px] bg-[#24a7a1] px-2 text-[11px] font-black text-white"
+          onClick={onOpenUpdates}
+          type="button"
+        >
+          <Bell aria-hidden="true" size={14} />
+          Al tanto
+        </button>
+        <a
+          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[8px] bg-[#17324d] px-2 text-[11px] font-black text-white"
+          href={getCenterRouteHref(center)}
+          rel="noreferrer"
+          target="_blank"
+        >
+          <Navigation aria-hidden="true" size={14} />
+          Ruta
+        </a>
+        <button
+          aria-controls="selected-center-mobile-details"
           aria-expanded={expanded}
-          aria-label={expanded ? "Ocultar detalles" : "Ver detalles"}
-          className="grid size-10 shrink-0 place-items-center rounded-[8px] border border-[#17324d]/10 bg-white text-[#17324d]"
+          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[8px] border border-[#17324d]/15 bg-white px-2 text-[11px] font-black text-[#17324d]"
           onClick={onToggleExpanded}
           type="button"
         >
           <ChevronDown
             aria-hidden="true"
             className={`transition-transform ${expanded ? "rotate-180" : ""}`}
-            size={19}
-          />
-        </button>
-      </div>
-
-      <div className="mt-3 grid gap-1.5 text-xs font-bold text-[#49656f]">
-        <p className="flex min-w-0 items-center gap-2">
-          <MapPin aria-hidden="true" className="shrink-0 text-[#24a7a1]" size={15} />
-          <span className="truncate">{center.address}</span>
-        </p>
-        <p className="flex min-w-0 items-center gap-2">
-          <CheckCircle2
-            aria-hidden="true"
-            className="shrink-0 text-[#5cb85c]"
             size={15}
           />
-          <span className="truncate">{center.hours}</span>
-        </p>
-      </div>
-
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        <ImpactMiniStat label="Visitas" value={center.impact.visits} />
-        <ImpactMiniStat label="Kg ayuda" value={center.impact.suppliesKg} />
-        <ImpactMiniStat label="Familias" value={center.impact.families} />
-      </div>
-
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        <button
-          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[8px] bg-[#24a7a1] px-2 text-xs font-black text-white transition hover:-translate-y-0.5"
-          onClick={onOpenUpdates}
-          type="button"
-        >
-          <Bell aria-hidden="true" size={15} />
-          Al tanto
+          Ficha
         </button>
-        <a
-          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[8px] bg-[#17324d] px-2 text-xs font-black text-white transition hover:-translate-y-0.5"
-          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-            center.address,
-          )}`}
-          rel="noreferrer"
-          target="_blank"
-        >
-          <Navigation aria-hidden="true" size={15} />
-          Ruta
-        </a>
-        <a
-          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[8px] border border-[#17324d]/15 bg-white px-2 text-xs font-black text-[#17324d] transition hover:-translate-y-0.5"
-          href={
-            center.publicContact.includes("@")
-              ? `mailto:${center.publicContact}`
-              : `tel:${center.publicContact.replace(/\s/g, "")}`
-          }
-        >
-          {center.publicContact.includes("@") ? (
-            <Mail aria-hidden="true" size={15} />
-          ) : (
-            <Phone aria-hidden="true" size={15} />
-          )}
-          Contacto
-        </a>
       </div>
+    </aside>
+  );
+}
+
+function SelectedCenterPanel({
+  center,
+  categoryById,
+  expanded,
+  onClear,
+  onToggleExpanded,
+  onOpenUpdates,
+}: {
+  center: AidCenter;
+  categoryById: Map<AidCategoryId, AidCategory>;
+  expanded: boolean;
+  onClear: () => void;
+  onToggleExpanded: () => void;
+  onOpenUpdates: () => void;
+}) {
+  return (
+    <aside className="absolute right-5 top-24 z-20 hidden max-h-[calc(100dvh-8rem)] w-[360px] overflow-y-auto rounded-[12px] border border-white/75 bg-[#fffbf2]/96 p-4 shadow-[0_18px_58px_rgba(23,50,77,0.18)] backdrop-blur lg:block">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <CenterBadges center={center} categoryById={categoryById} />
+          <h2 className="mt-1 text-xl font-black leading-tight text-[#17324d]">
+            {center.name}
+          </h2>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <button
+            aria-expanded={expanded}
+            aria-label={expanded ? "Ocultar detalles" : "Ver detalles"}
+            className="grid size-9 place-items-center rounded-[8px] border border-[#17324d]/10 bg-white text-[#17324d]"
+            onClick={onToggleExpanded}
+            type="button"
+          >
+            <ChevronDown
+              aria-hidden="true"
+              className={`transition-transform ${expanded ? "rotate-180" : ""}`}
+              size={17}
+            />
+          </button>
+          <button
+            aria-label="Cerrar centro seleccionado"
+            className="grid size-9 place-items-center rounded-[8px] border border-[#17324d]/10 bg-white text-[#17324d]"
+            onClick={onClear}
+            type="button"
+          >
+            <X aria-hidden="true" size={16} />
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-3">
+        <CenterInfoRows center={center} />
+      </div>
+
+      <div className="mt-3">
+        <CenterImpactGrid center={center} />
+      </div>
+
+      <div className="mt-3">
+        <CenterActions center={center} onOpenUpdates={onOpenUpdates} />
+      </div>
+
+      <p className="mt-4 border-t border-[#17324d]/10 pt-4 text-sm leading-6 text-[#49656f]">
+        {center.description}
+      </p>
 
       <div
         className={`border-t border-[#17324d]/10 pt-4 ${
           expanded ? "mt-4 grid gap-4" : "hidden"
         }`}
       >
-        <p className="text-sm leading-6 text-[#49656f]">
-          {center.description}
-        </p>
-
-        <div className="flex flex-wrap gap-1.5">
-          {center.categories.map((categoryId) => {
-            const category = categoryById.get(categoryId);
-
-            return (
-              <span
-                className="rounded-full px-2.5 py-1 text-xs font-black text-[#17324d]"
-                key={categoryId}
-                style={{ background: category?.surface }}
-              >
-                {category?.label}
-              </span>
-            );
-          })}
-        </div>
-
-        <dl className="grid gap-3 text-sm">
-          <div>
-            <dt className="font-black text-[#17324d]">Direccion</dt>
-            <dd className="mt-1 text-[#49656f]">{center.address}</dd>
-          </div>
-          <div>
-            <dt className="font-black text-[#17324d]">Horario</dt>
-            <dd className="mt-1 text-[#49656f]">{center.hours}</dd>
-          </div>
-          <div>
-            <dt className="font-black text-[#17324d]">Requisitos</dt>
-            <dd className="mt-1 text-[#49656f]">{center.requirements}</dd>
-          </div>
-          <div>
-            <dt className="font-black text-[#17324d]">Contacto publico</dt>
-            <dd className="mt-1 text-[#49656f]">{center.publicContact}</dd>
-          </div>
-          <div>
-            <dt className="font-black text-[#17324d]">Estado</dt>
-            <dd className="mt-1 text-[#49656f]">{center.verifiedAt}</dd>
-          </div>
-        </dl>
+        <CenterCategoryTags center={center} categoryById={categoryById} />
+        <CenterDefinitionList center={center} />
       </div>
     </aside>
   );
 }
+
+const SelectedCenterDetails = forwardRef<
+  HTMLElement,
+  {
+    center: AidCenter;
+    categoryById: Map<AidCategoryId, AidCategory>;
+    onOpenUpdates: () => void;
+  }
+>(function SelectedCenterDetails(
+  { center, categoryById, onOpenUpdates },
+  ref,
+) {
+  return (
+    <section
+      className="mx-4 mt-3 rounded-[12px] border border-[#17324d]/10 bg-white p-4 shadow-sm lg:hidden"
+      id="selected-center-mobile-details"
+      ref={ref}
+    >
+      <CenterBadges center={center} categoryById={categoryById} />
+      <h2 className="mt-2 text-2xl font-black leading-tight text-[#17324d]">
+        {center.name}
+      </h2>
+
+      <div className="mt-3">
+        <CenterInfoRows center={center} />
+      </div>
+
+      <p className="mt-4 text-sm leading-6 text-[#49656f]">
+        {center.description}
+      </p>
+
+      <div className="mt-4">
+        <CenterImpactGrid center={center} />
+      </div>
+
+      <div className="mt-4">
+        <CenterActions center={center} onOpenUpdates={onOpenUpdates} />
+      </div>
+
+      <div className="mt-4 grid gap-4 border-t border-[#17324d]/10 pt-4">
+        <CenterCategoryTags center={center} categoryById={categoryById} />
+        <CenterDefinitionList center={center} />
+      </div>
+    </section>
+  );
+});
 
 function ImpactMiniStat({ label, value }: { label: string; value: number }) {
   return (
