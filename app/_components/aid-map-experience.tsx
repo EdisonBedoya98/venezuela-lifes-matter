@@ -196,10 +196,9 @@ function drawShareBrandIcon(
 ) {
   context.save();
   context.fillStyle = "#fffbf2";
-  context.beginPath();
-  context.arc(900, 136, 96, 0, Math.PI * 2);
+  drawRoundedRect(context, 800, 72, 184, 184, 46);
   context.fill();
-  context.drawImage(image, 806, 42, 188, 188);
+  context.drawImage(image, 814, 86, 156, 156);
   context.restore();
 }
 
@@ -213,7 +212,7 @@ async function generateInstagramImage(
   const context = canvas.getContext("2d");
 
   canvas.width = 1080;
-  canvas.height = 1350;
+  canvas.height = 1920;
 
   if (!context) {
     return "";
@@ -223,71 +222,71 @@ async function generateInstagramImage(
   context.fillRect(0, 0, canvas.width, canvas.height);
 
   context.fillStyle = "#17324d";
-  drawRoundedRect(context, 56, 56, 968, 1238, 34);
+  drawRoundedRect(context, 56, 56, 968, 1808, 34);
   context.fill();
 
   context.fillStyle = "#24a7a1";
-  drawRoundedRect(context, 56, 56, 968, 252, 34);
+  drawRoundedRect(context, 56, 56, 968, 290, 34);
   context.fill();
 
   drawShareBrandIcon(context, brandIcon);
 
   context.fillStyle = "#ffffff";
   context.font = "900 34px Arial";
-  context.fillText("VENEZUELA LIVES MATTER", 96, 128);
-  context.font = "900 64px Arial";
+  context.fillText("VENEZUELA LIVES MATTER", 96, 136);
+  context.font = "900 72px Arial";
   drawWrappedText(
     context,
-    "Centro de ayuda verificado",
+    "Centro de ayuda",
     96,
-    206,
+    226,
     710,
-    72,
+    82,
     2,
   );
 
   context.fillStyle = "#fffbf2";
-  drawRoundedRect(context, 96, 360, 888, 640, 28);
+  drawRoundedRect(context, 96, 430, 888, 890, 28);
   context.fill();
 
   context.fillStyle = "#ef6f61";
   context.font = "900 34px Arial";
-  context.fillText(center.neighborhood.toUpperCase(), 136, 430);
+  context.fillText(center.neighborhood.toUpperCase(), 136, 510);
 
   context.fillStyle = "#17324d";
-  context.font = "900 70px Arial";
+  context.font = "900 78px Arial";
   const afterTitleY = drawWrappedText(
     context,
     center.name,
     136,
-    514,
+    612,
     810,
-    78,
+    86,
     3,
   );
 
   context.fillStyle = "#49656f";
-  context.font = "700 34px Arial";
+  context.font = "700 38px Arial";
   let nextY = drawWrappedText(
     context,
     center.address,
     136,
-    afterTitleY + 24,
+    afterTitleY + 34,
     810,
-    44,
+    50,
     2,
   );
 
   context.fillStyle = "#5cb85c";
-  context.font = "900 31px Arial";
-  nextY = drawWrappedText(context, center.hours, 136, nextY + 22, 810, 42, 2);
+  context.font = "900 34px Arial";
+  nextY = drawWrappedText(context, center.hours, 136, nextY + 30, 810, 48, 2);
 
   context.fillStyle = "#49656f";
-  context.font = "700 32px Arial";
-  drawWrappedText(context, center.description, 136, nextY + 30, 810, 43, 4);
+  context.font = "700 36px Arial";
+  drawWrappedText(context, center.description, 136, nextY + 42, 810, 50, 5);
 
   let pillX = 136;
-  let pillY = 888;
+  let pillY = 1180;
 
   center.categories.slice(0, 3).forEach((categoryId) => {
     const category = categoryById.get(categoryId);
@@ -307,20 +306,37 @@ async function generateInstagramImage(
   });
 
   context.fillStyle = "#f7c948";
-  drawRoundedRect(context, 96, 1048, 888, 158, 28);
+  drawRoundedRect(context, 96, 1418, 888, 252, 28);
   context.fill();
 
   context.fillStyle = "#17324d";
-  context.font = "900 38px Arial";
-  context.fillText("Encuentra la ruta y comparte este centro", 136, 1110);
-  context.font = "800 28px Arial";
-  drawWrappedText(context, centerUrl, 136, 1160, 810, 36, 2);
+  context.font = "900 42px Arial";
+  context.fillText("Comparte esta historia", 136, 1496);
+  context.font = "800 31px Arial";
+  drawWrappedText(context, "Agrega este link como sticker:", 136, 1560, 810, 40, 1);
+  context.font = "800 30px Arial";
+  drawWrappedText(context, centerUrl, 136, 1610, 810, 38, 2);
 
   context.fillStyle = "#ffffff";
-  context.font = "900 28px Arial";
-  context.fillText("Comparte el link en tu historia o bio para abrir el mapa directo.", 96, 1260);
+  context.font = "900 34px Arial";
+  context.fillText("Venezuela Lives Matter", 96, 1788);
+  context.font = "800 28px Arial";
+  context.fillText("Mapa de ayuda humanitaria en Colombia", 96, 1836);
 
   return canvas.toDataURL("image/png");
+}
+
+function dataUrlToFile(dataUrl: string, fileName: string) {
+  const [header = "", data = ""] = dataUrl.split(",");
+  const mime = header.match(/data:(.*);base64/)?.[1] ?? "image/png";
+  const binary = window.atob(data);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return new File([bytes], fileName, { type: mime });
 }
 
 export function AidMapExperience({
@@ -1370,6 +1386,7 @@ function CenterShareModal({
 }) {
   const [copied, setCopied] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
+  const [storyStatus, setStoryStatus] = useState("");
   const centerUrl = useMemo(() => getCenterShareUrl(center), [center]);
 
   useEffect(() => {
@@ -1378,6 +1395,7 @@ function CenterShareModal({
     const frame = window.requestAnimationFrame(() => {
       setCopied(false);
       setImageUrl("");
+      setStoryStatus("");
 
       generateInstagramImage(center, categoryById, centerUrl)
         .then((generatedImageUrl) => {
@@ -1414,23 +1432,7 @@ function CenterShareModal({
     }
 
     setCopied(true);
-  };
-
-  const nativeShare = async () => {
-    if (!navigator.share) {
-      await copyLink();
-      return;
-    }
-
-    try {
-      await navigator.share({
-        title: `${center.name} | Venezuela Lives Matter`,
-        text: `Centro de ayuda en ${cityName}: ${center.name}`,
-        url: centerUrl,
-      });
-    } catch {
-      // User cancelled or the browser blocked native share.
-    }
+    setStoryStatus("Link copiado para pegarlo como sticker en la historia.");
   };
 
   const downloadImage = () => {
@@ -1440,9 +1442,37 @@ function CenterShareModal({
 
     const link = document.createElement("a");
 
-    link.download = `${center.id}-instagram.png`;
+    link.download = `${center.id}-historia-instagram.png`;
     link.href = imageUrl;
     link.click();
+    setStoryStatus("Historia descargada. Subela en Instagram y agrega el link como sticker.");
+  };
+
+  const shareInstagramStory = async () => {
+    if (!imageUrl) {
+      return;
+    }
+
+    const storyFile = dataUrlToFile(
+      imageUrl,
+      `${center.id}-historia-instagram.png`,
+    );
+    const shareData: ShareData = {
+      files: [storyFile],
+    };
+
+    if (navigator.share && navigator.canShare?.(shareData)) {
+      try {
+        await navigator.share(shareData);
+        setStoryStatus("Historia enviada al menu de compartir. Elige Instagram e Historia.");
+        return;
+      } catch {
+        // User cancelled or the browser blocked native file sharing.
+      }
+    }
+
+    downloadImage();
+    await copyLink();
   };
 
   return (
@@ -1457,7 +1487,7 @@ function CenterShareModal({
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-black uppercase text-[#ef6f61]">
-                Compartir centro
+                Historia de Instagram
               </p>
               <h2
                 className="mt-1 text-2xl font-black leading-tight"
@@ -1467,6 +1497,11 @@ function CenterShareModal({
               </h2>
               <p className="mt-2 text-sm font-bold leading-6 text-[#49656f]">
                 {center.neighborhood}, {cityName}
+              </p>
+              <p className="mt-3 text-sm leading-6 text-[#49656f]">
+                Generamos una historia 9:16. En el menu de compartir elige
+                Instagram y luego Historia; si no aparece, descargala y subela
+                manualmente.
               </p>
             </div>
             <button
@@ -1481,7 +1516,7 @@ function CenterShareModal({
 
           <div className="mt-4 rounded-[8px] border border-[#17324d]/10 bg-white p-3">
             <p className="text-xs font-black uppercase text-[#617781]">
-              Link directo
+              Link para sticker
             </p>
             <p className="mt-2 break-all text-xs font-bold leading-5 text-[#17324d] sm:text-sm sm:leading-6">
               {centerUrl}
@@ -1495,25 +1530,33 @@ function CenterShareModal({
               type="button"
             >
               <Copy aria-hidden="true" size={17} />
-              {copied ? "Link copiado" : "Copiar link"}
+              {copied ? "Link copiado" : "Copiar link para sticker"}
             </button>
             <button
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#24a7a1] px-3 text-sm font-black text-white"
-              onClick={nativeShare}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#24a7a1] px-3 text-sm font-black text-white disabled:cursor-wait disabled:opacity-70"
+              disabled={!imageUrl}
+              onClick={shareInstagramStory}
               type="button"
             >
               <Share2 aria-hidden="true" size={17} />
-              Compartir
+              Compartir historia
             </button>
             <button
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#f7c948] px-3 text-sm font-black text-[#17324d] sm:col-span-2"
+              disabled={!imageUrl}
               onClick={downloadImage}
               type="button"
             >
               <Download aria-hidden="true" size={17} />
-              Descargar imagen para Instagram
+              Descargar historia 9:16
             </button>
           </div>
+
+          {storyStatus ? (
+            <div className="mt-3 rounded-[8px] border border-[#24a7a1]/25 bg-[#d7f8f2] p-3 text-sm font-bold leading-6 text-[#17324d]">
+              {storyStatus}
+            </div>
+          ) : null}
         </div>
 
         <div className="grid place-items-center rounded-[8px] bg-[#17324d] p-3">
@@ -1525,8 +1568,8 @@ function CenterShareModal({
               src={imageUrl}
             />
           ) : (
-            <div className="grid aspect-[4/5] w-full place-items-center rounded-[8px] bg-white/10 text-sm font-black text-white">
-              Generando imagen
+            <div className="grid aspect-[9/16] w-full place-items-center rounded-[8px] bg-white/10 text-sm font-black text-white">
+              Generando historia
             </div>
           )}
         </div>
