@@ -2,21 +2,15 @@ import { AtSign, ExternalLink, MapPin } from "lucide-react";
 
 const creditLinks = [
   {
-    href: "https://www.linkedin.com/search/results/people/?keywords=Edison%20Garcia",
-    label: "LinkedIn de Edison Garcia",
-    name: "Edison Garcia",
+    href: "https://www.linkedin.com/in/edison-bedoya/",
+    label: "LinkedIn de Edison Bedoya",
+    name: "Edison Bedoya",
     network: "LinkedIn",
   },
   {
-    href: "https://github.com/EdisonBedoya98",
-    label: "GitHub de Edison Bedoya Garcia",
-    name: "Edison Bedoya Garcia",
-    network: "GitHub",
-  },
-  {
-    href: "https://www.linkedin.com/search/results/people/?keywords=David%20Elias%20Palacios",
-    label: "LinkedIn de David Elias Palacios",
-    name: "David Elias Palacios",
+    href: "https://www.linkedin.com/in/davidepalacio/",
+    label: "LinkedIn de David Palacio",
+    name: "David Palacio",
     network: "LinkedIn",
   },
 ];
@@ -31,8 +25,7 @@ export function SiteFooter() {
             Venezuela Lives Matter
           </div>
           <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-white/78">
-            Creditos del proyecto para Edison Garcia, Edison Bedoya Garcia y
-            David Elias Palacios.
+            Creditos del proyecto para Edison Bedoya y David Palacio.
           </p>
         </div>
 
