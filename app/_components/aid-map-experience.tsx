@@ -655,14 +655,12 @@ export function AidMapExperience({
                   <Bell aria-hidden="true" size={20} />
                 </button>
                 <Link
-                  aria-label="Registrar centro de ayuda"
-                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-[8px] border border-[#17324d]/15 bg-[#f7c948] p-0 text-[#17324d] shadow-[0_12px_30px_rgba(23,50,77,0.18)] transition hover:-translate-y-0.5 sm:size-auto sm:min-h-12 sm:gap-2 sm:px-4 sm:text-sm sm:font-black sm:uppercase sm:leading-tight"
+                  aria-label="Postular centro de ayuda"
+                  className="inline-flex min-h-11 max-w-[9rem] shrink-0 items-center justify-center gap-2 rounded-[8px] border border-[#17324d]/15 bg-[#f7c948] px-3 text-center text-xs font-black uppercase leading-tight text-[#17324d] shadow-[0_12px_30px_rgba(23,50,77,0.18)] transition hover:-translate-y-0.5 sm:min-h-12 sm:max-w-none sm:px-4 sm:text-sm"
                   href="/reportar"
                 >
                   <ClipboardCheck aria-hidden="true" className="shrink-0" size={20} />
-                  <span className="hidden sm:inline">
-                    Registrar centro de ayuda
-                  </span>
+                  <span className="min-w-0">Postular centro</span>
                 </Link>
               </div>
             </div>
