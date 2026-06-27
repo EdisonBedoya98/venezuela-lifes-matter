@@ -1,16 +1,20 @@
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   ArrowLeft,
+  CheckCircle2,
   ClipboardList,
   Database,
   LockKeyhole,
   LogOut,
   ShieldCheck,
+  XCircle,
 } from "lucide-react";
 import {
   getAdminDashboardData,
+  reviewPendingCenter,
   type AdminCenterSummary,
   type AdminDashboardData,
 } from "@/app/_lib/data-service";
@@ -33,6 +37,7 @@ type AdminSearchParams = Promise<{
 type AuthUser = {
   accessToken?: string;
   email?: string;
+  id?: string;
   app_metadata?: Record<string, unknown>;
 };
 
@@ -126,6 +131,34 @@ async function logoutAdmin() {
   redirect("/admin?status=logged-out");
 }
 
+async function reviewCenter(formData: FormData) {
+  "use server";
+
+  const adminUser = await getAdminUser();
+
+  if (!adminUser?.accessToken) {
+    redirect("/admin?status=session");
+  }
+
+  const centerId = String(formData.get("centerId") ?? "");
+  const decision = String(formData.get("decision") ?? "");
+
+  if (!centerId || (decision !== "approved" && decision !== "rejected")) {
+    redirect("/admin?status=review-error");
+  }
+
+  const result = await reviewPendingCenter({
+    accessToken: adminUser.accessToken,
+    centerId,
+    decision,
+    reviewerId: adminUser.id,
+  });
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  redirect(`/admin?status=${result.status}`);
+}
+
 export default async function AdminPage({
   searchParams,
 }: {
@@ -141,7 +174,13 @@ export default async function AdminPage({
 
   const data = await getAdminDashboardData(adminUser.accessToken ?? "");
 
-  return <AdminDashboard data={data} userEmail={adminUser.email ?? "Admin"} />;
+  return (
+    <AdminDashboard
+      data={data}
+      status={status}
+      userEmail={adminUser.email ?? "Admin"}
+    />
+  );
 }
 
 function AdminLogin({ status }: { status?: string }) {
@@ -230,11 +269,15 @@ function AdminLogin({ status }: { status?: string }) {
 
 function AdminDashboard({
   data,
+  status,
   userEmail,
 }: {
   data: AdminDashboardData;
+  status?: string;
   userEmail: string;
 }) {
+  const actionStatusMessage = getAdminActionStatusMessage(status);
+
   return (
     <main className="min-h-dvh bg-[#fff8e8] px-4 py-5 text-[#17324d] sm:px-6 lg:px-10">
       <div className="mx-auto max-w-6xl">
@@ -272,6 +315,18 @@ function AdminDashboard({
         {data.notice ? (
           <div className="mt-5 rounded-[8px] border border-[#ef6f61]/25 bg-[#ffe2dd] p-4 text-sm font-bold leading-6 text-[#17324d]">
             {data.notice}
+          </div>
+        ) : null}
+
+        {actionStatusMessage ? (
+          <div
+            className={`mt-5 rounded-[8px] border p-4 text-sm font-bold leading-6 text-[#17324d] ${
+              actionStatusMessage.tone === "success"
+                ? "border-[#5cb85c]/30 bg-[#dff4dd]"
+                : "border-[#ef6f61]/30 bg-[#ffe2dd]"
+            }`}
+          >
+            {actionStatusMessage.message}
           </div>
         ) : null}
 
@@ -445,11 +500,38 @@ function AdminCenterCard({
       </p>
 
       {!compact ? (
-        <div className="mt-3 grid gap-2 rounded-[8px] border border-[#17324d]/10 bg-white p-3 text-xs font-bold leading-5 text-[#49656f]">
-          <p>Reporta: {center.reporter}</p>
-          <p>Contacto privado: {center.reporterContact || "Sin contacto"}</p>
-          <p>Senal: {center.signal}</p>
-          <p>Geocode: {center.geocodeLabel}</p>
+        <div className="mt-3 grid gap-3">
+          <div className="grid gap-2 rounded-[8px] border border-[#17324d]/10 bg-white p-3 text-xs font-bold leading-5 text-[#49656f]">
+            <p>Reporta: {center.reporter}</p>
+            <p>Contacto privado: {center.reporterContact || "Sin contacto"}</p>
+            <p>Senal: {center.signal}</p>
+            <p>Geocode: {center.geocodeLabel}</p>
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-2">
+            <form action={reviewCenter}>
+              <input name="centerId" type="hidden" value={center.databaseId} />
+              <input name="decision" type="hidden" value="approved" />
+              <button
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[8px] bg-[#17324d] px-3 text-sm font-black text-white transition hover:-translate-y-0.5"
+                type="submit"
+              >
+                <CheckCircle2 aria-hidden="true" size={16} />
+                Aprobar y publicar
+              </button>
+            </form>
+            <form action={reviewCenter}>
+              <input name="centerId" type="hidden" value={center.databaseId} />
+              <input name="decision" type="hidden" value="rejected" />
+              <button
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[8px] border border-[#ef6f61]/30 bg-[#ffe2dd] px-3 text-sm font-black text-[#17324d] transition hover:-translate-y-0.5"
+                type="submit"
+              >
+                <XCircle aria-hidden="true" size={16} />
+                Rechazar
+              </button>
+            </form>
+          </div>
         </div>
       ) : (
         <p className="mt-2 text-sm font-semibold text-[#617781]">
@@ -466,4 +548,50 @@ function EmptyAdminState({ message }: { message: string }) {
       {message}
     </div>
   );
+}
+
+function getAdminActionStatusMessage(status?: string) {
+  if (status === "approved") {
+    return {
+      message: "Centro aprobado y publicado en el mapa.",
+      tone: "success" as const,
+    };
+  }
+
+  if (status === "rejected") {
+    return {
+      message: "Centro rechazado y retirado de la cola pendiente.",
+      tone: "success" as const,
+    };
+  }
+
+  if (status === "config") {
+    return {
+      message: "Falta configuracion privada para revisar centros.",
+      tone: "error" as const,
+    };
+  }
+
+  if (status === "review-error") {
+    return {
+      message: "No pudimos procesar esa revision. Intenta de nuevo.",
+      tone: "error" as const,
+    };
+  }
+
+  if (status === "session") {
+    return {
+      message: "Tu sesion expiro. Vuelve a iniciar sesion para revisar centros.",
+      tone: "error" as const,
+    };
+  }
+
+  if (status === "error") {
+    return {
+      message: "No pudimos guardar esa revision. Intenta de nuevo.",
+      tone: "error" as const,
+    };
+  }
+
+  return undefined;
 }

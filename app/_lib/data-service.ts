@@ -88,6 +88,7 @@ export type AdminCenterSummary = {
   address: string;
   city: string;
   createdAt: string;
+  databaseId: string;
   department: string;
   geocodeLabel: string;
   id: string;
@@ -115,6 +116,10 @@ export type UpdatesActionState = {
 
 export type CenterSubmissionResult = {
   status: "recibido" | "config" | "error";
+};
+
+export type CenterReviewResult = {
+  status: "approved" | "rejected" | "config" | "error";
 };
 
 const legacyProviderPrefix = "SUPA" + "BASE";
@@ -367,6 +372,52 @@ export async function subscribeToUpdates(
   }
 }
 
+export async function reviewPendingCenter({
+  accessToken,
+  centerId,
+  decision,
+  reviewerId,
+}: {
+  accessToken: string;
+  centerId: string;
+  decision: "approved" | "rejected";
+  reviewerId?: string;
+}): Promise<CenterReviewResult> {
+  if (!getPublicDataServiceConfig()) {
+    return { status: "config" };
+  }
+
+  try {
+    const now = new Date().toISOString();
+    const approved = decision === "approved";
+
+    await dataServiceRestFetch(
+      `aid_centers?id=eq.${encodeURIComponent(centerId)}`,
+      {
+        body: {
+          approved_at: approved ? now : null,
+          geocode_needs_review: approved ? false : true,
+          rejection_reason: approved
+            ? null
+            : "Centro rechazado desde el panel administrativo.",
+          reviewed_at: now,
+          reviewed_by: reviewerId ?? null,
+          status: decision,
+        },
+        method: "PATCH",
+        prefer: "return=minimal",
+        token: accessToken,
+      },
+    );
+
+    return { status: decision };
+  } catch (error) {
+    console.error(error);
+
+    return { status: "error" };
+  }
+}
+
 async function fetchAdminCenters(accessToken: string, status: CenterStatus) {
   return dataServiceRestFetch<CenterRow[]>(
     [
@@ -595,6 +646,7 @@ function mapAdminCenterRow(
     address: row.address ?? row.formatted_address ?? "Direccion por confirmar",
     city: row.city ?? "Sin ciudad",
     createdAt: formatVerifiedAt(row.created_at),
+    databaseId: row.id,
     department: row.department ?? "Sin departamento",
     geocodeLabel: row.geocode_confidence ?? "sin geocodificacion",
     id: row.slug,

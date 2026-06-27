@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, ClipboardCheck, LockKeyhole, Send } from "lucide-react";
+import { ArrowLeft, ClipboardCheck, LockKeyhole } from "lucide-react";
 import { redirect } from "next/navigation";
 import { AttentionDaysField } from "@/app/_components/attention-days-field";
 import {
@@ -10,6 +10,7 @@ import {
 } from "@/app/_components/form-primitives";
 import { LocationFields } from "@/app/_components/location-fields";
 import { LocationVerifier } from "@/app/_components/location-verifier";
+import { ReportSubmitButton } from "@/app/_components/report-submit-button";
 import { createCenterSubmission } from "@/app/_lib/data-service";
 
 async function submitReport(formData: FormData) {
@@ -185,13 +186,7 @@ export default async function ReportPage({
               </div>
             </div>
 
-            <button
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[8px] bg-[#17324d] px-5 text-sm font-black text-white transition hover:-translate-y-0.5 md:w-fit"
-              type="submit"
-            >
-              <Send aria-hidden="true" size={18} />
-              Enviar para verificacion
-            </button>
+            <ReportSubmitButton />
           </form>
         </section>
       </div>
@@ -205,7 +200,7 @@ function isInsideColombia(lat: number, lng: number) {
 
 function getStatusMessage(status?: string) {
   if (status === "recibido") {
-    return "Recibimos el reporte con el pin validado y quedo guardado como pendiente. El equipo admin revisara la informacion antes de publicarlo en el mapa.";
+    return "Tu centro fue enviado satisfactoriamente. El equipo verificara la informacion y, si todo esta correcto, lo publicara en el mapa.";
   }
 
   if (status === "config") {
