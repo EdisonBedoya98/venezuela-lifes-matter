@@ -13,6 +13,7 @@ import { AttentionDaysField } from "@/app/_components/attention-days-field";
 import {
   Field,
   FormSection,
+  RequirementBadge,
   SelectField,
   TextAreaField,
 } from "@/app/_components/form-primitives";
@@ -23,6 +24,10 @@ import { createCenterSubmission } from "@/app/_lib/data-service";
 
 async function submitReport(formData: FormData) {
   "use server";
+
+  if (!hasRequiredSubmissionFields(formData)) {
+    redirect("/reportar?estado=datos");
+  }
 
   const latitude = Number(formData.get("geoLatitude"));
   const longitude = Number(formData.get("geoLongitude"));
@@ -45,6 +50,23 @@ async function submitReport(formData: FormData) {
   const result = await createCenterSubmission(formData);
 
   redirect(`/reportar?estado=${result.status}`);
+}
+
+function hasRequiredSubmissionFields(formData: FormData) {
+  const requiredFields = [
+    "centerName",
+    "department",
+    "city",
+    "address",
+    "reporterName",
+    "email",
+  ];
+  const hasRequiredText = requiredFields.every(
+    (fieldName) => String(formData.get(fieldName) ?? "").trim().length > 0,
+  );
+  const email = String(formData.get("email") ?? "").trim();
+
+  return hasRequiredText && email.includes("@") && formData.get("dataConsent") === "on";
 }
 
 export default async function ReportPage({
@@ -96,11 +118,24 @@ export default async function ReportPage({
           ) : null}
 
           <form action={submitReport} className="mt-6 grid min-w-0 gap-5">
+            <div className="grid gap-3 rounded-[8px] border border-[#17324d]/10 bg-[#fffbf2] p-4 text-sm font-bold leading-6 text-[#49656f]">
+              <p>
+                Completa primero los datos marcados como obligatorios. Los campos
+                opcionales ayudan a verificar mas rapido, pero puedes dejarlos en
+                blanco si aun no tienes esa informacion.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <RequirementBadge required />
+                <RequirementBadge />
+              </div>
+            </div>
+
             <FormSection title="Datos del centro">
               <Field label="Nombre del centro" name="centerName" required />
               <LocationFields />
               <TextAreaField
                 dataLocationSource="locationDetails"
+                hint="Referencia visual, piso, local, porteria o cualquier detalle que ayude a encontrar el lugar."
                 label="Detalles de ubicacion"
                 name="locationDetails"
               />
@@ -111,7 +146,7 @@ export default async function ReportPage({
                 required
               />
               <LocationVerifier />
-              <SelectField label="Tipo de ayuda principal" name="category" required>
+              <SelectField label="Tipo de ayuda principal" name="category">
                 <option value="">Seleccionar</option>
                 <option value="food">Recoleccion o entrega de comida</option>
                 <option value="health">Salud</option>
@@ -124,24 +159,29 @@ export default async function ReportPage({
               </SelectField>
               <AttentionDaysField />
               <Field
+                hint="Puedes dejarlo vacio si el horario aun esta por confirmar."
                 label="Hora de inicio"
                 name="openingTime"
-                required
                 type="time"
               />
               <Field
+                hint="Puedes dejarlo vacio si el horario aun esta por confirmar."
                 label="Hora de cierre"
                 name="closingTime"
-                required
                 type="time"
               />
-              <Field label="Contacto publico autorizado" name="publicContact" />
-              <TextAreaField
-                label="Descripcion del servicio"
-                name="description"
-                required
+              <Field
+                hint="Correo, WhatsApp o red social que el centro autorice mostrar."
+                label="Contacto publico autorizado"
+                name="publicContact"
               />
               <TextAreaField
+                hint="Describe que tipo de apoyo presta el centro cuando tengas esa informacion."
+                label="Descripcion del servicio"
+                name="description"
+              />
+              <TextAreaField
+                hint="Ejemplo: llevar documento, confirmar cupos o entregar donaciones limpias."
                 label="Requisitos para recibir o entregar ayuda"
                 name="requirements"
               />
@@ -155,7 +195,7 @@ export default async function ReportPage({
                 required
                 type="email"
               />
-              <Field label="WhatsApp o telefono" name="phone" required />
+              <Field label="WhatsApp o telefono" name="phone" />
               <Field label="Organizacion, si aplica" name="organization" />
             </FormSection>
 
@@ -174,8 +214,14 @@ export default async function ReportPage({
                       required
                       type="checkbox"
                     />
-                    Autorizo el tratamiento de mis datos personales para
-                    verificar este reporte.
+                    <span className="min-w-0">
+                      <span className="mb-1 flex flex-wrap items-center gap-2">
+                        <span>Tratamiento de datos personales</span>
+                        <RequirementBadge required />
+                      </span>
+                      Autorizo el tratamiento de mis datos personales para
+                      verificar este reporte.
+                    </span>
                   </label>
                   <label className="flex min-w-0 gap-3 font-semibold">
                     <input
@@ -215,6 +261,10 @@ function getStatusMessage(status?: string) {
 
   if (status === "error") {
     return "No pudimos guardar el reporte. Revisa la configuracion interna y vuelve a intentar.";
+  }
+
+  if (status === "datos") {
+    return "Completa los campos marcados como obligatorios antes de enviar la postulacion.";
   }
 
   if (status === "ubicacion") {

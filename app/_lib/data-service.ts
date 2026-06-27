@@ -652,8 +652,10 @@ function mapCenterRow(row: CenterRow): AidCenter | null {
     coordinates: { lat, lng },
     databaseId: row.id,
     department,
-    description: row.description ?? "Centro aprobado por el equipo.",
-    hours: row.hours_label ?? "Horario por confirmar",
+    description:
+      row.description?.trim() ||
+      "Informacion pendiente de confirmar directamente con el centro.",
+    hours: row.hours_label?.trim() || "Horario por confirmar",
     id: row.slug,
     impact: {
       families: row.impact_families ?? 0,
@@ -664,9 +666,10 @@ function mapCenterRow(row: CenterRow): AidCenter | null {
     name: row.name ?? "Centro de ayuda",
     neighborhood: row.neighborhood ?? cityName,
     position: { x: 50, y: 50 },
-    publicContact: row.public_contact ?? "",
+    publicContact: row.public_contact?.trim() || "Sin contacto publico confirmado",
     requirements:
-      row.requirements ?? "Consulta los requisitos directamente con el centro.",
+      row.requirements?.trim() ||
+      "Consulta los requisitos directamente con el centro.",
     verifiedAt: formatVerifiedAt(row.approved_at ?? row.reviewed_at ?? row.created_at),
   };
 }

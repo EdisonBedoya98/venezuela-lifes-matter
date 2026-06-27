@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { FieldLabel } from "@/app/_components/form-primitives";
 
 const dayOptions = [
   "Lunes",
@@ -37,12 +38,11 @@ export function AttentionDaysField() {
   return (
     <div className="grid min-w-0 gap-2 text-sm font-black md:col-span-2">
       <label className="grid min-w-0 gap-2">
-        Dias de atencion
+        <FieldLabel label="Dias de atencion" />
         <select
           className="min-h-12 min-w-0 max-w-full rounded-[8px] border border-[#17324d]/15 bg-[#fffbf2] px-3 font-semibold outline-none focus:border-[#24a7a1]"
           disabled={availableDays.length === 0}
           onChange={(event) => addDay(event.target.value)}
-          required={selectedDays.length === 0}
           value=""
         >
           <option value="">
