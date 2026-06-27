@@ -714,7 +714,7 @@ function ImpactStrip({
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:mt-2">
+    <div className="grid grid-cols-2 gap-2 pt-4 sm:grid-cols-4 sm:pt-5 lg:mt-2 lg:pt-0">
       {items.map(([label, value]) => (
         <div
           className="rounded-[8px] border border-[#17324d]/10 bg-white p-3 shadow-sm"
