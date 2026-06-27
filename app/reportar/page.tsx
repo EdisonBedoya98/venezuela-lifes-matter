@@ -64,6 +64,8 @@ export default async function ReportPage({
             <FormSection title="Datos del centro">
               <Field label="Nombre del centro" name="centerName" required />
               <Field label="Direccion" name="address" required />
+              <Field label="Ciudad" name="city" required />
+              <Field label="Departamento" name="department" required />
               <Field label="Barrio o comuna" name="neighborhood" required />
               <SelectField label="Tipo de ayuda principal" name="category" required>
                 <option value="">Seleccionar</option>

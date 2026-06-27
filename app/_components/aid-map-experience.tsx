@@ -53,6 +53,7 @@ type AidMapExperienceProps = {
 };
 
 type CategoryFilter = AidCategoryId | "all";
+type CityFilter = AidCityId | "all";
 type CSSVariableProperties = React.CSSProperties & {
   [key: `--${string}`]: string | number;
 };
@@ -69,6 +70,13 @@ const categoryIcons = {
 } satisfies Record<AidCategoryId, typeof Soup>;
 
 const formatNumber = new Intl.NumberFormat("es-CO");
+const COLOMBIA_MAP = {
+  center: {
+    lat: 4.5709,
+    lng: -74.2973,
+  },
+  zoom: 5,
+};
 
 function getImpactFromCenters(centers: AidCenter[]) {
   return {
@@ -85,9 +93,7 @@ export function AidMapExperience({
   cities,
   impact,
 }: AidMapExperienceProps) {
-  const [activeCityId, setActiveCityId] = useState<AidCityId>(
-    cities[0]?.id ?? "medellin",
-  );
+  const [activeCityId, setActiveCityId] = useState<CityFilter>("all");
   const [activeFilter, setActiveFilter] = useState<CategoryFilter>("all");
   const [isCenterPanelExpanded, setIsCenterPanelExpanded] = useState(false);
   const [isUpdatesModalOpen, setIsUpdatesModalOpen] = useState(false);
@@ -104,10 +110,14 @@ export function AidMapExperience({
     () => new Map(cities.map((city) => [city.id, city])),
     [cities],
   );
-  const activeCity = cityById.get(activeCityId) ?? cities[0];
+  const activeCity =
+    activeCityId === "all" ? undefined : cityById.get(activeCityId);
   const cityCenters = useMemo(
-    () => centers.filter((center) => center.cityId === activeCity?.id),
-    [activeCity?.id, centers],
+    () =>
+      activeCityId === "all"
+        ? centers
+        : centers.filter((center) => center.cityId === activeCityId),
+    [activeCityId, centers],
   );
   const cityCenterCounts = useMemo(() => {
     const counts = new Map<AidCityId, number>();
@@ -119,8 +129,8 @@ export function AidMapExperience({
     return counts;
   }, [centers]);
   const activeImpact = useMemo(
-    () => getImpactFromCenters(cityCenters),
-    [cityCenters],
+    () => (activeCityId === "all" ? impact : getImpactFromCenters(cityCenters)),
+    [activeCityId, cityCenters, impact],
   );
 
   const filteredCenters = useMemo(() => {
@@ -142,7 +152,7 @@ export function AidMapExperience({
         center.neighborhood,
         center.address,
         center.description,
-        activeCity?.name ?? "",
+        cityById.get(center.cityId)?.name ?? "",
         categoryText,
       ]
         .join(" ")
@@ -150,7 +160,7 @@ export function AidMapExperience({
 
       return matchesCategory && haystack.includes(normalizedQuery);
     });
-  }, [activeCity?.name, activeFilter, categoryById, cityCenters, query]);
+  }, [activeFilter, categoryById, cityById, cityCenters, query]);
 
   const selectedCenter = selectedCenterId
     ? filteredCenters.find((center) => center.id === selectedCenterId)
@@ -190,7 +200,7 @@ export function AidMapExperience({
     [filteredCenters],
   );
 
-  const selectCity = (cityId: AidCityId) => {
+  const selectCity = (cityId: CityFilter) => {
     setActiveCityId(cityId);
     setActiveFilter("all");
     setQuery("");
@@ -229,15 +239,22 @@ export function AidMapExperience({
             </p>
           </header>
 
-          <ImpactStrip impact={activeCity ? activeImpact : impact} />
+          <ImpactStrip impact={activeImpact} />
 
           <div className="rounded-[8px] border border-[#17324d]/10 bg-white p-3 shadow-[0_20px_60px_rgba(23,50,77,0.08)]">
             <CitySelector
-              activeCityId={activeCity?.id}
+              activeCityId={activeCityId}
               cities={cities}
               counts={cityCenterCounts}
+              totalCount={centers.length}
               onSelectCity={selectCity}
             />
+
+            <div className="mb-3 rounded-[8px] border border-[#17324d]/10 bg-[#fffbf2] p-3 text-xs font-bold leading-5 text-[#49656f]">
+              Recibimos postulaciones de toda Colombia. Una ciudad aparece como
+              activa cuando el equipo valida al menos un centro con direccion,
+              contacto publico y ubicacion en mapa.
+            </div>
 
             <div className="flex items-center gap-2 rounded-[8px] border border-[#17324d]/10 bg-[#f8fbf7] px-3 py-2">
               <Search aria-hidden="true" size={18} className="text-[#617781]" />
@@ -302,8 +319,8 @@ export function AidMapExperience({
             <GoogleAidMap
               categoryById={categoryById}
               centers={cityCenters}
-              mapCenter={activeCity?.map.center}
-              mapZoom={activeCity?.map.zoom}
+              mapCenter={activeCity?.map.center ?? COLOMBIA_MAP.center}
+              mapZoom={activeCity?.map.zoom ?? COLOMBIA_MAP.zoom}
               onSelectCenter={selectCenter}
               selectedCenterId={selectedCenter?.id}
               visibleCenterIds={visibleCenterIds}
@@ -420,21 +437,37 @@ function CitySelector({
   activeCityId,
   cities,
   counts,
+  totalCount,
   onSelectCity,
 }: {
-  activeCityId?: AidCityId;
+  activeCityId: CityFilter;
   cities: AidCity[];
   counts: Map<AidCityId, number>;
-  onSelectCity: (cityId: AidCityId) => void;
+  totalCount: number;
+  onSelectCity: (cityId: CityFilter) => void;
 }) {
   return (
     <div className="mb-3">
       <p className="mb-2 text-xs font-black uppercase text-[#ef6f61]">
-        Ciudad
+        Cobertura
       </p>
       <div className="flex gap-2 overflow-x-auto pb-1">
+        <button
+          aria-pressed={activeCityId === "all"}
+          className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-[8px] border border-[#17324d]/10 bg-[#fffbf2] px-3 text-sm font-black text-[#17324d] shadow-sm transition hover:-translate-y-0.5 data-[active=true]:border-[#24a7a1]/45 data-[active=true]:bg-[#d7f8f2]"
+          data-active={activeCityId === "all"}
+          onClick={() => onSelectCity("all")}
+          type="button"
+        >
+          <MapPin aria-hidden="true" size={16} />
+          <span>Colombia</span>
+          <span className="rounded-full bg-white px-2 py-0.5 text-[11px] text-[#617781]">
+            {totalCount}
+          </span>
+        </button>
         {cities.map((city) => {
           const active = city.id === activeCityId;
+          const count = counts.get(city.id) ?? 0;
 
           return (
             <button
@@ -448,7 +481,7 @@ function CitySelector({
               <MapPin aria-hidden="true" size={16} />
               <span>{city.name}</span>
               <span className="rounded-full bg-white px-2 py-0.5 text-[11px] text-[#617781]">
-                {counts.get(city.id) ?? 0}
+                {count}
               </span>
             </button>
           );
@@ -1049,6 +1082,15 @@ function UpdatesModal({
               <input
                 className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-white px-3 font-semibold outline-none focus:border-[#24a7a1]"
                 name="city"
+                required
+                type="text"
+              />
+            </label>
+            <label className="grid gap-2 text-sm font-black">
+              Departamento opcional
+              <input
+                className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-white px-3 font-semibold outline-none focus:border-[#24a7a1]"
+                name="department"
                 type="text"
               />
             </label>
