@@ -7,6 +7,7 @@ import {
   SelectField,
   TextAreaField,
 } from "@/app/_components/form-primitives";
+import { LocationFields } from "@/app/_components/location-fields";
 
 async function submitReport() {
   "use server";
@@ -63,14 +64,12 @@ export default async function ReportPage({
           <form action={submitReport} className="mt-6 grid gap-5">
             <FormSection title="Datos del centro">
               <Field label="Nombre del centro" name="centerName" required />
-              <Field label="Direccion" name="address" required />
-              <Field label="Ciudad" name="city" required />
-              <Field label="Departamento" name="department" required />
-              <Field label="Barrio o comuna" name="neighborhood" required />
+              <LocationFields />
               <TextAreaField
                 label="Detalles de ubicacion"
                 name="locationDetails"
               />
+              <Field label="Direccion" name="address" required />
               <SelectField label="Tipo de ayuda principal" name="category" required>
                 <option value="">Seleccionar</option>
                 <option value="food">Recoleccion o entrega de comida</option>
