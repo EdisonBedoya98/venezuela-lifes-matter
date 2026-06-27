@@ -168,7 +168,7 @@ export function AidMapExperience({
 
   const selectCenter = useCallback((centerId: string) => {
     setSelectedCenterId(centerId);
-    setIsCenterPanelExpanded(false);
+    setIsCenterPanelExpanded(true);
   }, []);
 
   const clearSelectedCenter = useCallback(() => {
@@ -823,7 +823,7 @@ function SelectedCenterPreview({
             className={`transition-transform ${expanded ? "rotate-180" : ""}`}
             size={15}
           />
-          Ficha
+          Detalle
         </button>
       </div>
     </aside>
