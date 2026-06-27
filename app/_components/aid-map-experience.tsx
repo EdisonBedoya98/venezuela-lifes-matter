@@ -1001,7 +1001,7 @@ function CenterActions({
         target="_blank"
       >
         <Navigation aria-hidden="true" size={15} />
-        Ruta
+        Cómo llegar
       </a>
       {contactHref ? (
         <a
@@ -1122,7 +1122,7 @@ function SelectedCenterPreview({
           target="_blank"
         >
           <Navigation aria-hidden="true" size={14} />
-          Ruta
+          Cómo llegar
         </a>
         <button
           aria-controls="selected-center-mobile-details"
