@@ -34,10 +34,6 @@ import {
   useRef,
   useState,
 } from "react";
-import {
-  submitVolunteerApplication,
-  type VolunteerApplicationResult,
-} from "@/app/_actions/volunteer-applications";
 import { GoogleAidMap } from "@/app/_components/google-aid-map";
 import type {
   AidCategory,
@@ -86,14 +82,6 @@ const COLOMBIA_MAP = {
   zoom: 5,
 };
 const CENTER_QUERY_PARAM = "centro";
-const volunteerSupportOptions = [
-  "Entrega o recoleccion de comida",
-  "Logistica en jornadas",
-  "Orientacion documental",
-  "Comunicaciones y redes",
-  "Transporte",
-  "Salud o primeros auxilios",
-];
 
 function getImpactFromCenters(centers: AidCenter[]) {
   return {
@@ -924,6 +912,36 @@ function getContactHref(publicContact: string) {
   return phone ? `tel:${phone}` : undefined;
 }
 
+function getWhatsAppPhone(publicContact: string) {
+  const digits = publicContact.replace(/\D/g, "");
+
+  if (digits.length >= 11) {
+    return digits;
+  }
+
+  if (digits.length === 10) {
+    return `57${digits}`;
+  }
+
+  return undefined;
+}
+
+function getVolunteerWhatsAppMessage(center: AidCenter, cityName: string) {
+  return `Hola, vengo desde Venezuela Lives Matter. Quiero postularme como voluntario/a para apoyar al centro ${center.name} en ${center.neighborhood}, ${cityName}. ¿Me pueden contar cómo puedo ayudar y qué horarios necesitan?`;
+}
+
+function getVolunteerWhatsAppHref(center: AidCenter, cityName: string) {
+  const phone = getWhatsAppPhone(center.publicContact);
+
+  if (!phone) {
+    return undefined;
+  }
+
+  return `https://wa.me/${phone}?text=${encodeURIComponent(
+    getVolunteerWhatsAppMessage(center, cityName),
+  )}`;
+}
+
 function CenterBadges({
   center,
   categoryById,
@@ -1574,34 +1592,15 @@ function VolunteerApplicationModal({
   cityName: string;
   onClose: () => void;
 }) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [result, setResult] = useState<VolunteerApplicationResult>();
-
-  const submitApplication = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-
-    setIsSubmitting(true);
-    setResult(undefined);
-
-    const nextResult = await submitVolunteerApplication(formData);
-
-    setResult(nextResult);
-    setIsSubmitting(false);
-
-    if (nextResult.ok) {
-      form.reset();
-    }
-  };
+  const whatsappHref = getVolunteerWhatsAppHref(center, cityName);
+  const whatsappMessage = getVolunteerWhatsAppMessage(center, cityName);
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-end bg-[#17324d]/42 px-3 py-3 backdrop-blur-sm sm:place-items-center">
       <section
         aria-labelledby="volunteer-modal-title"
         aria-modal="true"
-        className="max-h-[calc(100dvh-1.5rem)] w-full max-w-3xl overflow-y-auto rounded-[12px] border border-white/70 bg-[#fffbf2] p-4 text-[#17324d] shadow-[0_24px_90px_rgba(23,50,77,0.28)] sm:p-5"
+        className="max-h-[calc(100dvh-1.5rem)] w-full max-w-xl overflow-y-auto rounded-[12px] border border-white/70 bg-[#fffbf2] p-4 text-[#17324d] shadow-[0_24px_90px_rgba(23,50,77,0.28)] sm:p-5"
         role="dialog"
       >
         <div className="flex items-start justify-between gap-3">
@@ -1616,8 +1615,8 @@ function VolunteerApplicationModal({
               Postularme como voluntario
             </h2>
             <p className="mt-2 text-sm leading-6 text-[#49656f]">
-              Tus datos llegan al equipo de Venezuela Lives Matter para revisar
-              la postulacion y coordinar contacto con el centro seleccionado.
+              Te llevamos al WhatsApp del centro con un mensaje listo para que
+              puedas coordinar directamente tu apoyo.
             </p>
           </div>
           <button
@@ -1642,140 +1641,31 @@ function VolunteerApplicationModal({
           </p>
         </div>
 
-        {result?.ok ? (
-          <div className="mt-5 rounded-[8px] border border-[#5cb85c]/30 bg-[#dff4dd] p-4">
-            <p className="text-sm font-black text-[#17324d]">{result.message}</p>
-            <button
-              className="mt-4 inline-flex min-h-11 items-center justify-center rounded-[8px] bg-[#17324d] px-4 text-sm font-black text-white"
-              onClick={onClose}
-              type="button"
-            >
-              Cerrar
-            </button>
-          </div>
+        <div className="mt-4 rounded-[8px] border border-[#17324d]/10 bg-white p-3">
+          <p className="text-xs font-black uppercase text-[#617781]">
+            Mensaje predeterminado
+          </p>
+          <p className="mt-2 text-sm font-bold leading-6 text-[#49656f]">
+            {whatsappMessage}
+          </p>
+        </div>
+
+        {whatsappHref ? (
+          <a
+            className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[8px] bg-[#24a7a1] px-4 text-sm font-black text-white transition hover:-translate-y-0.5"
+            href={whatsappHref}
+            rel="noreferrer"
+            target="_blank"
+          >
+            <Phone aria-hidden="true" size={18} />
+            Abrir WhatsApp del centro
+          </a>
         ) : (
-          <form className="mt-5 grid gap-4" onSubmit={submitApplication}>
-            <input name="centerId" type="hidden" value={center.id} />
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <label className="grid gap-2 text-sm font-black">
-                Nombre completo
-                <input
-                  className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-white px-3 font-semibold outline-none focus:border-[#24a7a1]"
-                  name="fullName"
-                  required
-                  type="text"
-                />
-              </label>
-              <label className="grid gap-2 text-sm font-black">
-                Correo
-                <input
-                  className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-white px-3 font-semibold outline-none focus:border-[#24a7a1]"
-                  name="email"
-                  required
-                  type="email"
-                />
-              </label>
-              <label className="grid gap-2 text-sm font-black">
-                WhatsApp o telefono
-                <input
-                  className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-white px-3 font-semibold outline-none focus:border-[#24a7a1]"
-                  name="phone"
-                  required
-                  type="tel"
-                />
-              </label>
-              <label className="grid gap-2 text-sm font-black">
-                Ciudad donde estas
-                <input
-                  className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-white px-3 font-semibold outline-none focus:border-[#24a7a1]"
-                  name="volunteerCity"
-                  required
-                  type="text"
-                />
-              </label>
-              <label className="grid gap-2 text-sm font-black md:col-span-2">
-                Disponibilidad
-                <select
-                  className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-white px-3 font-semibold outline-none focus:border-[#24a7a1]"
-                  name="availability"
-                  required
-                >
-                  <option value="">Seleccionar disponibilidad</option>
-                  <option value="Entre semana en la manana">
-                    Entre semana en la manana
-                  </option>
-                  <option value="Entre semana en la tarde">
-                    Entre semana en la tarde
-                  </option>
-                  <option value="Fines de semana">Fines de semana</option>
-                  <option value="Turnos puntuales">Turnos puntuales</option>
-                  <option value="Remoto">Remoto</option>
-                </select>
-              </label>
-            </div>
-
-            <fieldset className="grid gap-2 rounded-[8px] border border-[#17324d]/10 bg-white p-3">
-              <legend className="px-2 text-sm font-black">
-                Formas en las que puedes apoyar
-              </legend>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {volunteerSupportOptions.map((option) => (
-                  <label
-                    className="flex min-h-10 items-center gap-2 rounded-[8px] bg-[#fffbf2] px-3 text-sm font-bold"
-                    key={option}
-                  >
-                    <input
-                      className="size-4 shrink-0"
-                      name="supportAreas"
-                      type="checkbox"
-                      value={option}
-                    />
-                    {option}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-
-            <label className="grid gap-2 text-sm font-black">
-              Mensaje para el equipo
-              <textarea
-                className="min-h-24 rounded-[8px] border border-[#17324d]/15 bg-white px-3 py-3 font-semibold outline-none focus:border-[#24a7a1]"
-                name="message"
-                placeholder="Cuéntanos experiencia, horarios o algo clave para coordinar."
-              />
-            </label>
-
-            <label className="flex gap-3 rounded-[8px] border border-[#17324d]/10 bg-white p-3 text-sm font-semibold leading-6 text-[#49656f]">
-              <input
-                className="mt-1 size-4 shrink-0"
-                name="shareConsent"
-                required
-                type="checkbox"
-              />
-              Autorizo que Venezuela Lives Matter use mis datos para revisar mi
-              postulacion y pueda compartirlos con este centro para coordinar
-              voluntariado.
-            </label>
-
-            {result && !result.ok ? (
-              <div
-                aria-live="polite"
-                className="rounded-[8px] border border-[#ef6f61]/30 bg-[#ffe2dd] p-3 text-sm font-bold text-[#17324d]"
-              >
-                {result.message}
-              </div>
-            ) : null}
-
-            <button
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[8px] bg-[#17324d] px-4 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={isSubmitting}
-              type="submit"
-            >
-              <UsersRound aria-hidden="true" size={18} />
-              {isSubmitting ? "Enviando postulacion" : "Enviar postulacion"}
-            </button>
-          </form>
+          <div className="mt-4 rounded-[8px] border border-[#ef6f61]/30 bg-[#ffe2dd] p-3 text-sm font-bold leading-6 text-[#17324d]">
+            Este centro todavia no tiene un numero de WhatsApp publico
+            configurado. Agrega un telefono en el contacto publico para activar
+            este boton.
+          </div>
         )}
       </section>
     </div>
