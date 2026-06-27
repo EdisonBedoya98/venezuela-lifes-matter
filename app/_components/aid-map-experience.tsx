@@ -326,7 +326,7 @@ export function AidMapExperience({
               visibleCenterIds={visibleCenterIds}
             />
 
-            <div className="absolute left-4 right-4 top-4 z-20 flex items-center justify-between gap-3">
+            <div className="absolute left-4 right-4 top-4 z-20 flex items-start justify-between gap-3">
               <div className="rounded-[8px] border border-white/70 bg-[#fffbf2]/95 px-3 py-2 shadow-sm backdrop-blur">
                 <p className="text-xs font-black uppercase text-[#ef6f61]">
                   Venezuela Lives Matter
@@ -335,7 +335,7 @@ export function AidMapExperience({
                   {activeCity?.name ?? "Colombia"}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row">
                 <button
                   aria-label="Estar al tanto"
                   className="grid size-11 place-items-center rounded-[8px] border border-[#17324d]/10 bg-[#24a7a1] text-white shadow-sm transition hover:-translate-y-0.5"
@@ -345,11 +345,15 @@ export function AidMapExperience({
                   <Bell aria-hidden="true" size={20} />
                 </button>
                 <Link
-                  aria-label="Postular un centro"
-                  className="grid size-11 place-items-center rounded-[8px] border border-[#17324d]/10 bg-[#f7c948] text-[#17324d] shadow-sm transition hover:-translate-y-0.5"
+                  aria-label="Registrar punto de recoleccion"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[8px] border border-[#17324d]/15 bg-[#f7c948] px-3 text-xs font-black uppercase text-[#17324d] shadow-[0_12px_30px_rgba(23,50,77,0.18)] transition hover:-translate-y-0.5 sm:px-4 sm:text-sm"
                   href="/reportar"
                 >
-                  <ClipboardCheck aria-hidden="true" size={20} />
+                  <ClipboardCheck aria-hidden="true" className="shrink-0" size={20} />
+                  <span className="sm:hidden">Registrar</span>
+                  <span className="hidden sm:inline">
+                    Registrar punto de recoleccion
+                  </span>
                 </Link>
               </div>
             </div>
