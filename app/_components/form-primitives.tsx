@@ -8,8 +8,8 @@ export function FormSection({
   title: string;
 }) {
   return (
-    <fieldset className="grid gap-4 rounded-[8px] border border-[#17324d]/10 p-4 md:grid-cols-2">
-      <legend className="px-2 text-sm font-black uppercase text-[#ef6f61]">
+    <fieldset className="grid min-w-0 max-w-full gap-4 rounded-[8px] border border-[#17324d]/10 p-4 md:grid-cols-2">
+      <legend className="max-w-full px-2 text-sm font-black uppercase text-[#ef6f61]">
         {title}
       </legend>
       {children}
@@ -31,10 +31,10 @@ export function Field({
   type?: string;
 }) {
   return (
-    <label className="grid gap-2 text-sm font-black">
+    <label className="grid min-w-0 gap-2 text-sm font-black">
       {label}
       <input
-        className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-[#fffbf2] px-3 font-semibold outline-none focus:border-[#24a7a1]"
+        className="min-h-12 min-w-0 max-w-full rounded-[8px] border border-[#17324d]/15 bg-[#fffbf2] px-3 font-semibold outline-none focus:border-[#24a7a1]"
         data-location-source={dataLocationSource}
         name={name}
         required={required}
@@ -56,10 +56,10 @@ export function TextAreaField({
   required?: boolean;
 }) {
   return (
-    <label className="grid gap-2 text-sm font-black md:col-span-2">
+    <label className="grid min-w-0 gap-2 text-sm font-black md:col-span-2">
       {label}
       <textarea
-        className="min-h-28 rounded-[8px] border border-[#17324d]/15 bg-[#fffbf2] px-3 py-3 font-semibold outline-none focus:border-[#24a7a1]"
+        className="min-h-28 min-w-0 max-w-full rounded-[8px] border border-[#17324d]/15 bg-[#fffbf2] px-3 py-3 font-semibold outline-none focus:border-[#24a7a1]"
         data-location-source={dataLocationSource}
         name={name}
         required={required}
@@ -80,10 +80,10 @@ export function SelectField({
   required?: boolean;
 }) {
   return (
-    <label className="grid gap-2 text-sm font-black">
+    <label className="grid min-w-0 gap-2 text-sm font-black">
       {label}
       <select
-        className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-[#fffbf2] px-3 font-semibold outline-none focus:border-[#24a7a1]"
+        className="min-h-12 min-w-0 max-w-full rounded-[8px] border border-[#17324d]/15 bg-[#fffbf2] px-3 font-semibold outline-none focus:border-[#24a7a1]"
         name={name}
         required={required}
       >

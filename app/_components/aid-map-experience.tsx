@@ -526,9 +526,9 @@ export function AidMapExperience({
   const closeUpdatesModal = () => setIsUpdatesModalOpen(false);
 
   return (
-    <main className="min-h-dvh bg-[#fff8e8] text-[#17324d]">
-      <div className="mx-auto flex min-h-dvh w-full max-w-[1440px] flex-col lg:grid lg:grid-cols-[minmax(420px,0.78fr)_minmax(640px,1.22fr)]">
-        <section className="order-2 flex flex-col gap-4 px-4 pb-6 pt-0 lg:order-1 lg:min-h-dvh lg:px-8 lg:py-8 xl:px-10">
+    <main className="min-h-dvh w-full overflow-x-clip bg-[#fff8e8] text-[#17324d]">
+      <div className="mx-auto flex min-h-dvh w-full min-w-0 max-w-[1440px] flex-col overflow-x-clip lg:grid lg:grid-cols-[minmax(420px,0.78fr)_minmax(640px,1.22fr)]">
+        <section className="order-2 flex min-w-0 flex-col gap-4 px-4 pb-6 pt-0 lg:order-1 lg:min-h-dvh lg:px-8 lg:py-8 xl:px-10">
           <header className="hidden lg:block">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#17324d]/10 bg-white px-3 py-2 text-sm font-semibold text-[#35615f] shadow-sm">
               <ShieldCheck aria-hidden="true" size={16} />
@@ -543,7 +543,7 @@ export function AidMapExperience({
             </p>
           </header>
 
-          <div className="rounded-[8px] border border-[#17324d]/10 bg-white p-3 shadow-[0_20px_60px_rgba(23,50,77,0.08)]">
+          <div className="min-w-0 rounded-[8px] border border-[#17324d]/10 bg-white p-3 shadow-[0_20px_60px_rgba(23,50,77,0.08)]">
             <CitySelector
               activeCityId={activeCityId}
               cities={cities}
@@ -575,7 +575,7 @@ export function AidMapExperience({
               />
             </div>
 
-            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            <div className="mt-3 flex min-w-0 max-w-full gap-2 overflow-x-auto overscroll-x-contain pb-1">
               <FilterButton
                 active={activeFilter === "all"}
                 label="Todos"
@@ -604,7 +604,7 @@ export function AidMapExperience({
             </div>
           </div>
 
-          <section className="grid gap-3 lg:grid-cols-2">
+          <section className="grid min-w-0 gap-3 lg:grid-cols-2">
             {filteredCenters.map((center) => (
               <CenterListItem
                 key={center.id}
@@ -624,7 +624,7 @@ export function AidMapExperience({
           </section>
         </section>
 
-        <section className="order-1 lg:sticky lg:top-0 lg:order-2 lg:h-dvh lg:p-5">
+        <section className="order-1 min-w-0 lg:sticky lg:top-0 lg:order-2 lg:h-dvh lg:p-5">
           <div className="relative h-[68dvh] min-h-[430px] max-h-[640px] overflow-hidden rounded-b-[24px] border-b border-[#17324d]/10 bg-[#c9eee3] shadow-[0_24px_80px_rgba(23,50,77,0.16)] sm:min-h-[520px] lg:h-full lg:max-h-none lg:min-h-0 lg:rounded-[12px] lg:border">
             <GoogleAidMap
               categoryById={categoryById}
@@ -636,12 +636,12 @@ export function AidMapExperience({
               visibleCenterIds={visibleCenterIds}
             />
 
-            <div className="absolute left-4 right-4 top-4 z-20 flex items-start justify-between gap-3">
-              <div className="rounded-[8px] border border-white/70 bg-[#fffbf2]/95 px-3 py-2 shadow-sm backdrop-blur">
+            <div className="absolute left-4 right-4 top-4 z-20 flex min-w-0 items-start justify-between gap-3">
+              <div className="min-w-0 rounded-[8px] border border-white/70 bg-[#fffbf2]/95 px-3 py-2 shadow-sm backdrop-blur">
                 <p className="text-xs font-black uppercase text-[#ef6f61]">
                   Venezuela Lives Matter
                 </p>
-                <p className="text-sm font-black text-[#17324d]">
+                <p className="truncate text-sm font-black text-[#17324d]">
                   {activeCity?.name ?? "Colombia"}
                 </p>
               </div>
@@ -656,13 +656,10 @@ export function AidMapExperience({
                 </button>
                 <Link
                   aria-label="Registrar centro de ayuda"
-                  className="inline-flex min-h-14 items-center justify-center gap-2 rounded-[8px] border border-[#17324d]/15 bg-[#f7c948] px-3 text-[11px] font-black uppercase leading-tight text-[#17324d] shadow-[0_12px_30px_rgba(23,50,77,0.18)] transition hover:-translate-y-0.5 sm:min-h-12 sm:px-4 sm:text-sm"
+                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-[8px] border border-[#17324d]/15 bg-[#f7c948] p-0 text-[#17324d] shadow-[0_12px_30px_rgba(23,50,77,0.18)] transition hover:-translate-y-0.5 sm:size-auto sm:min-h-12 sm:gap-2 sm:px-4 sm:text-sm sm:font-black sm:uppercase sm:leading-tight"
                   href="/reportar"
                 >
                   <ClipboardCheck aria-hidden="true" className="shrink-0" size={20} />
-                  <span className="max-w-24 text-left sm:hidden">
-                    Registrar centro de ayuda
-                  </span>
                   <span className="hidden sm:inline">
                     Registrar centro de ayuda
                   </span>
@@ -757,7 +754,7 @@ function CitySelector({
       <p className="mb-2 text-xs font-black uppercase text-[#ef6f61]">
         Cobertura
       </p>
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="flex min-w-0 max-w-full gap-2 overflow-x-auto overscroll-x-contain pb-1">
         <button
           aria-pressed={activeCityId === "all"}
           className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-[8px] border border-[#17324d]/10 bg-[#fffbf2] px-3 text-sm font-black text-[#17324d] shadow-sm transition hover:-translate-y-0.5 data-[active=true]:border-[#24a7a1]/45 data-[active=true]:bg-[#d7f8f2]"
@@ -837,7 +834,7 @@ function CenterListItem({
 }) {
   return (
     <button
-      className="rounded-[8px] border bg-white p-3 text-left shadow-sm transition hover:-translate-y-0.5"
+      className="w-full min-w-0 rounded-[8px] border bg-white p-3 text-left shadow-sm transition hover:-translate-y-0.5"
       data-selected={selected}
       onClick={onSelect}
       type="button"
@@ -850,7 +847,7 @@ function CenterListItem({
           <p className="truncate text-sm font-black text-[#17324d]">
             {center.name}
           </p>
-          <p className="mt-1 text-xs font-bold text-[#617781]">
+          <p className="mt-1 truncate text-xs font-bold text-[#617781]">
             {center.neighborhood} · {center.verifiedAt}
           </p>
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -1052,9 +1049,9 @@ function CenterActions({
     "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[8px] px-2 text-xs font-black transition hover:-translate-y-0.5";
 
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid min-w-0 grid-cols-2 gap-2">
       <button
-        className={`${actionClass} col-span-2 bg-[#f7c948] text-[#17324d] shadow-sm`}
+        className={`${actionClass} col-span-2 min-w-0 bg-[#f7c948] text-center text-[#17324d] shadow-sm`}
         onClick={() => onOpenVolunteer(center.id)}
         type="button"
       >
@@ -1062,7 +1059,7 @@ function CenterActions({
         Postularme como voluntario
       </button>
       <button
-        className={`${actionClass} bg-[#24a7a1] text-white`}
+        className={`${actionClass} min-w-0 bg-[#24a7a1] text-center text-white`}
         onClick={onOpenUpdates}
         type="button"
       >
@@ -1070,7 +1067,7 @@ function CenterActions({
         Al tanto
       </button>
       <a
-        className={`${actionClass} bg-[#17324d] text-white`}
+        className={`${actionClass} min-w-0 bg-[#17324d] text-center text-white`}
         href={getCenterRouteHref(center)}
         rel="noreferrer"
         target="_blank"
@@ -1080,7 +1077,7 @@ function CenterActions({
       </a>
       {contactHref ? (
         <a
-          className={`${actionClass} border border-[#17324d]/15 bg-white text-[#17324d]`}
+          className={`${actionClass} min-w-0 border border-[#17324d]/15 bg-white text-center text-[#17324d]`}
           href={contactHref}
         >
           {contactIcon}
@@ -1089,14 +1086,14 @@ function CenterActions({
       ) : (
         <span
           aria-disabled="true"
-          className={`${actionClass} border border-[#17324d]/15 bg-white text-[#17324d]/55`}
+          className={`${actionClass} min-w-0 border border-[#17324d]/15 bg-white text-center text-[#17324d]/55`}
         >
           {contactIcon}
           Contacto
         </span>
       )}
       <button
-        className={`${actionClass} border border-[#17324d]/15 bg-[#fff3bf] text-[#17324d]`}
+        className={`${actionClass} min-w-0 border border-[#17324d]/15 bg-[#fff3bf] text-center text-[#17324d]`}
         onClick={() => onOpenShare(center.id)}
         type="button"
       >
@@ -1154,7 +1151,7 @@ function SelectedCenterPreview({
   onOpenVolunteer: (centerId: string) => void;
 }) {
   return (
-    <aside className="mx-4 mt-3 rounded-[12px] border border-[#17324d]/10 bg-[#fffbf2] p-3 shadow-sm lg:hidden">
+    <aside className="mx-4 mt-3 max-w-[calc(100%-2rem)] rounded-[12px] border border-[#17324d]/10 bg-[#fffbf2] p-3 shadow-sm lg:hidden">
       <div className="flex items-start gap-3">
         <span className="grid size-11 shrink-0 place-items-center rounded-[8px] bg-[#d7f8f2] text-[#17324d]">
           <MapPin aria-hidden="true" size={20} />
@@ -1183,9 +1180,9 @@ function SelectedCenterPreview({
         </button>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      <div className="mt-3 grid min-w-0 grid-cols-2 gap-2">
         <button
-          className="col-span-2 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[8px] bg-[#f7c948] px-2 text-xs font-black text-[#17324d]"
+          className="col-span-2 inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-[8px] bg-[#f7c948] px-2 text-center text-xs font-black text-[#17324d]"
           onClick={() => onOpenVolunteer(center.id)}
           type="button"
         >
@@ -1193,7 +1190,7 @@ function SelectedCenterPreview({
           Postularme como voluntario
         </button>
         <button
-          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[8px] bg-[#24a7a1] px-2 text-[11px] font-black text-white"
+          className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1.5 rounded-[8px] bg-[#24a7a1] px-2 text-center text-[11px] font-black text-white"
           onClick={onOpenUpdates}
           type="button"
         >
@@ -1201,7 +1198,7 @@ function SelectedCenterPreview({
           Al tanto
         </button>
         <a
-          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[8px] bg-[#17324d] px-2 text-[11px] font-black text-white"
+          className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1.5 rounded-[8px] bg-[#17324d] px-2 text-center text-[11px] font-black text-white"
           href={getCenterRouteHref(center)}
           rel="noreferrer"
           target="_blank"
@@ -1212,7 +1209,7 @@ function SelectedCenterPreview({
         <button
           aria-controls="selected-center-mobile-details"
           aria-expanded={expanded}
-          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[8px] border border-[#17324d]/15 bg-white px-2 text-[11px] font-black text-[#17324d]"
+          className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1.5 rounded-[8px] border border-[#17324d]/15 bg-white px-2 text-center text-[11px] font-black text-[#17324d]"
           onClick={onToggleExpanded}
           type="button"
         >
@@ -1224,7 +1221,7 @@ function SelectedCenterPreview({
           Detalle
         </button>
         <button
-          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[8px] border border-[#17324d]/15 bg-[#fff3bf] px-2 text-[11px] font-black text-[#17324d]"
+          className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1.5 rounded-[8px] border border-[#17324d]/15 bg-[#fff3bf] px-2 text-center text-[11px] font-black text-[#17324d]"
           onClick={() => onOpenShare(center.id)}
           type="button"
         >
@@ -1337,7 +1334,7 @@ const SelectedCenterDetails = forwardRef<
 ) {
   return (
     <section
-      className="mx-4 mt-3 rounded-[12px] border border-[#17324d]/10 bg-white p-4 shadow-sm lg:hidden"
+      className="mx-4 mt-3 max-w-[calc(100%-2rem)] rounded-[12px] border border-[#17324d]/10 bg-white p-4 shadow-sm lg:hidden"
       id="selected-center-mobile-details"
       ref={ref}
     >
@@ -1519,21 +1516,21 @@ function CenterShareModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-end bg-[#17324d]/42 px-3 py-3 backdrop-blur-sm sm:place-items-center">
+    <div className="fixed inset-0 z-50 grid overflow-x-hidden place-items-end bg-[#17324d]/42 px-3 py-3 backdrop-blur-sm sm:place-items-center">
       <section
         aria-labelledby="share-modal-title"
         aria-modal="true"
-        className="grid max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl gap-4 overflow-y-auto rounded-[12px] border border-white/70 bg-[#fffbf2] p-4 text-[#17324d] shadow-[0_24px_90px_rgba(23,50,77,0.28)] sm:grid-cols-[0.82fr_1fr] sm:p-5"
+        className="grid max-h-[calc(100dvh-1.5rem)] w-full max-w-[calc(100vw-1.5rem)] gap-4 overflow-x-hidden overflow-y-auto rounded-[12px] border border-white/70 bg-[#fffbf2] p-4 text-[#17324d] shadow-[0_24px_90px_rgba(23,50,77,0.28)] sm:max-w-4xl sm:grid-cols-[0.82fr_1fr] sm:p-5"
         role="dialog"
       >
         <div className="flex min-h-0 flex-col">
           <div className="flex items-start justify-between gap-3">
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-black uppercase text-[#ef6f61]">
                 Historia de Instagram
               </p>
               <h2
-                className="mt-1 text-2xl font-black leading-tight"
+                className="mt-1 break-words text-2xl font-black leading-tight"
                 id="share-modal-title"
               >
                 {center.name}
@@ -1566,9 +1563,9 @@ function CenterShareModal({
             </p>
           </div>
 
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          <div className="mt-4 grid min-w-0 gap-2 sm:grid-cols-2">
             <button
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#17324d] px-3 text-sm font-black text-white"
+              className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-[8px] bg-[#17324d] px-3 text-center text-sm font-black text-white"
               onClick={copyLink}
               type="button"
             >
@@ -1576,7 +1573,7 @@ function CenterShareModal({
               {copied ? "Link copiado" : "Copiar link para sticker"}
             </button>
             <button
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#24a7a1] px-3 text-sm font-black text-white disabled:cursor-wait disabled:opacity-70"
+              className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-[8px] bg-[#24a7a1] px-3 text-center text-sm font-black text-white disabled:cursor-wait disabled:opacity-70"
               disabled={!imageUrl}
               onClick={shareInstagramStory}
               type="button"
@@ -1585,7 +1582,7 @@ function CenterShareModal({
               Compartir historia
             </button>
             <button
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#f7c948] px-3 text-sm font-black text-[#17324d] sm:col-span-2"
+              className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-[8px] bg-[#f7c948] px-3 text-center text-sm font-black text-[#17324d] sm:col-span-2"
               disabled={!imageUrl}
               onClick={downloadImage}
               type="button"
@@ -1602,16 +1599,16 @@ function CenterShareModal({
           ) : null}
         </div>
 
-        <div className="grid place-items-center rounded-[8px] bg-[#17324d] p-3">
+        <div className="grid min-w-0 max-w-full place-items-center overflow-hidden rounded-[8px] bg-[#17324d] p-3">
           {imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               alt={`Imagen para compartir ${center.name}`}
-              className="max-h-[58dvh] w-auto rounded-[8px] border border-white/15 shadow-2xl"
+              className="h-auto max-h-[58dvh] max-w-full rounded-[8px] border border-white/15 object-contain shadow-2xl"
               src={imageUrl}
             />
           ) : (
-            <div className="grid aspect-[9/16] w-full place-items-center rounded-[8px] bg-white/10 text-sm font-black text-white">
+            <div className="grid aspect-[9/16] w-full max-w-full place-items-center rounded-[8px] bg-white/10 text-center text-sm font-black text-white">
               Generando historia
             </div>
           )}
@@ -1634,20 +1631,20 @@ function VolunteerApplicationModal({
   const whatsappMessage = getVolunteerWhatsAppMessage(center, cityName);
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-end bg-[#17324d]/42 px-3 py-3 backdrop-blur-sm sm:place-items-center">
+    <div className="fixed inset-0 z-50 grid overflow-x-hidden place-items-end bg-[#17324d]/42 px-3 py-3 backdrop-blur-sm sm:place-items-center">
       <section
         aria-labelledby="volunteer-modal-title"
         aria-modal="true"
-        className="max-h-[calc(100dvh-1.5rem)] w-full max-w-xl overflow-y-auto rounded-[12px] border border-white/70 bg-[#fffbf2] p-4 text-[#17324d] shadow-[0_24px_90px_rgba(23,50,77,0.28)] sm:p-5"
+        className="max-h-[calc(100dvh-1.5rem)] w-full max-w-[calc(100vw-1.5rem)] overflow-x-hidden overflow-y-auto rounded-[12px] border border-white/70 bg-[#fffbf2] p-4 text-[#17324d] shadow-[0_24px_90px_rgba(23,50,77,0.28)] sm:max-w-xl sm:p-5"
         role="dialog"
       >
         <div className="flex items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-black uppercase text-[#ef6f61]">
               Voluntariado
             </p>
             <h2
-              className="mt-1 text-2xl font-black leading-tight"
+              className="mt-1 break-words text-2xl font-black leading-tight"
               id="volunteer-modal-title"
             >
               Postularme como voluntario
@@ -1727,20 +1724,20 @@ function UpdatesModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-end bg-[#17324d]/38 px-3 py-3 backdrop-blur-sm sm:place-items-center">
+    <div className="fixed inset-0 z-50 grid overflow-x-hidden place-items-end bg-[#17324d]/38 px-3 py-3 backdrop-blur-sm sm:place-items-center">
       <section
         aria-labelledby="updates-modal-title"
         aria-modal="true"
-        className="w-full max-w-lg rounded-[12px] border border-white/70 bg-[#fffbf2] p-4 text-[#17324d] shadow-[0_24px_90px_rgba(23,50,77,0.28)] sm:p-5"
+        className="w-full max-w-[calc(100vw-1.5rem)] overflow-x-hidden rounded-[12px] border border-white/70 bg-[#fffbf2] p-4 text-[#17324d] shadow-[0_24px_90px_rgba(23,50,77,0.28)] sm:max-w-lg sm:p-5"
         role="dialog"
       >
         <div className="flex items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-black uppercase text-[#ef6f61]">
               Estar al tanto
             </p>
             <h2
-              className="mt-1 text-2xl font-black leading-tight"
+              className="mt-1 break-words text-2xl font-black leading-tight"
               id="updates-modal-title"
             >
               Recibir informacion sobre Venezuela
