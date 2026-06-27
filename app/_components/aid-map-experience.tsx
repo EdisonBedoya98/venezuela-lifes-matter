@@ -27,31 +27,31 @@ import {
 import Link from "next/link";
 import {
   forwardRef,
+  useActionState,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
+import { subscribeToUpdatesAction } from "@/app/_actions/newsletter";
 import { GoogleAidMap } from "@/app/_components/google-aid-map";
+import type { UpdatesActionState } from "@/app/_lib/supabase-data";
 import type {
   AidCategory,
   AidCategoryId,
   AidCenter,
   AidCity,
   AidCityId,
-} from "@/app/_data/aid-centers";
+  AidImpact,
+} from "@/app/_types/aid";
 
 type AidMapExperienceProps = {
   categories: AidCategory[];
   centers: AidCenter[];
   cities: AidCity[];
-  impact: {
-    activeCenters: number;
-    monthlyVisits: number;
-    suppliesKg: number;
-    families: number;
-  };
+  impact: AidImpact;
+  notice?: string;
 };
 
 type CategoryFilter = AidCategoryId | "all";
@@ -60,7 +60,7 @@ type CSSVariableProperties = React.CSSProperties & {
   [key: `--${string}`]: string | number;
 };
 
-const categoryIcons = {
+const categoryIcons: Record<string, typeof Soup> = {
   food: Soup,
   health: Stethoscope,
   shelter: Home,
@@ -69,7 +69,7 @@ const categoryIcons = {
   transport: Bus,
   donations: Gift,
   volunteers: UsersRound,
-} satisfies Record<AidCategoryId, typeof Soup>;
+};
 
 const formatNumber = new Intl.NumberFormat("es-CO");
 const SHARE_PIN_IMAGE_URL = "/pin-velezuela.webp";
@@ -81,6 +81,10 @@ const COLOMBIA_MAP = {
   zoom: 5,
 };
 const CENTER_QUERY_PARAM = "centro";
+const initialUpdatesState: UpdatesActionState = {
+  message: "",
+  status: "idle",
+};
 
 function getCenterShareUrl(center: AidCenter) {
   if (typeof window === "undefined") {
@@ -342,6 +346,7 @@ export function AidMapExperience({
   categories,
   centers,
   cities,
+  notice,
 }: AidMapExperienceProps) {
   const [activeCityId, setActiveCityId] = useState<CityFilter>("all");
   const [activeFilter, setActiveFilter] = useState<CategoryFilter>("all");
@@ -553,6 +558,12 @@ export function AidMapExperience({
               contacto publico y ubicacion en mapa.
             </div>
 
+            {notice ? (
+              <div className="mb-3 rounded-[8px] border border-[#f7c948]/35 bg-[#fff3bf] p-3 text-xs font-black leading-5 text-[#17324d]">
+                {notice}
+              </div>
+            ) : null}
+
             <div className="flex items-center gap-2 rounded-[8px] border border-[#17324d]/10 bg-[#f8fbf7] px-3 py-2">
               <Search aria-hidden="true" size={18} className="text-[#617781]" />
               <input
@@ -573,7 +584,7 @@ export function AidMapExperience({
                 <HeartHandshake aria-hidden="true" size={16} />
               </FilterButton>
               {categories.map((category) => {
-                const Icon = categoryIcons[category.id];
+                const Icon = categoryIcons[category.id] ?? HeartHandshake;
 
                 return (
                   <FilterButton
@@ -605,7 +616,9 @@ export function AidMapExperience({
             ))}
             {filteredCenters.length === 0 ? (
               <div className="rounded-[8px] border border-dashed border-[#17324d]/25 bg-white p-4 text-sm font-semibold text-[#49656f]">
-                No hay centros con esos filtros.
+                {centers.length === 0
+                  ? "No hay centros aprobados todavia. Cuando el equipo publique data real, aparecera aqui."
+                  : "No hay centros con esos filtros."}
               </div>
             ) : null}
           </section>
@@ -671,7 +684,7 @@ export function AidMapExperience({
                 }
               />
             ) : filteredCenters.length === 0 ? (
-              <EmptyCenterPanel />
+              <EmptyCenterPanel hasAnyCenters={centers.length > 0} />
             ) : null}
           </div>
 
@@ -850,7 +863,7 @@ function CenterListItem({
                   key={categoryId}
                   style={{ background: category?.surface }}
                 >
-                  {category?.shortLabel}
+                  {category?.shortLabel ?? categoryId}
                 </span>
               );
             })}
@@ -1010,7 +1023,7 @@ function CenterCategoryTags({
             key={categoryId}
             style={{ background: category?.surface }}
           >
-            {category?.label}
+            {category?.label ?? categoryId}
           </span>
         );
       })}
@@ -1375,19 +1388,22 @@ function ImpactMiniStat({ label, value }: { label: string; value: number }) {
   );
 }
 
-function EmptyCenterPanel() {
+function EmptyCenterPanel({ hasAnyCenters }: { hasAnyCenters: boolean }) {
   return (
     <aside className="absolute bottom-3 left-3 right-3 z-20 rounded-[16px] border border-white/75 bg-[#fffbf2]/96 p-3 shadow-[0_18px_58px_rgba(23,50,77,0.18)] backdrop-blur sm:p-4 lg:bottom-5 lg:left-auto lg:right-5 lg:w-[360px]">
       <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-[#17324d]/20 lg:hidden" />
       <p className="text-xs font-black uppercase tracking-normal text-[#ef6f61]">
-        Sin resultados
+        {hasAnyCenters ? "Sin resultados" : "Sin centros publicados"}
       </p>
       <h2 className="mt-1 text-xl font-black leading-tight text-[#17324d]">
-        No hay centros con esos filtros
+        {hasAnyCenters
+          ? "No hay centros con esos filtros"
+          : "Aun no hay centros aprobados"}
       </h2>
       <p className="mt-3 text-sm leading-6 text-[#49656f]">
-        Puedes ampliar la busqueda o reportar un punto para que el equipo lo
-        verifique.
+        {hasAnyCenters
+          ? "Puedes ampliar la busqueda o reportar un punto para que el equipo lo verifique."
+          : "El mapa queda limpio hasta que el equipo apruebe centros reales desde Supabase."}
       </p>
       <Link
         className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#17324d] px-3 text-sm font-black text-white transition hover:-translate-y-0.5"
@@ -1701,7 +1717,10 @@ function UpdatesModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const [submitted, setSubmitted] = useState(false);
+  const [state, formAction, isPending] = useActionState(
+    subscribeToUpdatesAction,
+    initialUpdatesState,
+  );
 
   if (!isOpen) {
     return null;
@@ -1741,19 +1760,19 @@ function UpdatesModal({
           </button>
         </div>
 
-        {submitted ? (
-          <div className="mt-5 rounded-[8px] border border-[#5cb85c]/30 bg-[#dff4dd] p-4 text-sm font-bold text-[#17324d]">
-            Listo. Cuando conectemos Supabase, este registro quedara guardado en
-            la tabla de suscripciones.
-          </div>
-        ) : (
-          <form
-            className="mt-5 grid gap-3"
-            onSubmit={(event) => {
-              event.preventDefault();
-              setSubmitted(true);
-            }}
+        {state.status !== "idle" ? (
+          <div
+            className={`mt-5 rounded-[8px] border p-4 text-sm font-bold text-[#17324d] ${
+              state.status === "success"
+                ? "border-[#5cb85c]/30 bg-[#dff4dd]"
+                : "border-[#ef6f61]/30 bg-[#ffe2dd]"
+            }`}
           >
+            {state.message}
+          </div>
+        ) : null}
+
+        <form action={formAction} className="mt-5 grid gap-3">
             <label className="grid gap-2 text-sm font-black">
               Nombre
               <input
@@ -1808,13 +1827,13 @@ function UpdatesModal({
               comunicaciones sobre Venezuela.
             </label>
             <button
-              className="inline-flex min-h-12 items-center justify-center rounded-[8px] bg-[#17324d] px-5 text-sm font-black text-white"
+              className="inline-flex min-h-12 items-center justify-center rounded-[8px] bg-[#17324d] px-5 text-sm font-black text-white disabled:cursor-wait disabled:opacity-70"
+              disabled={isPending}
               type="submit"
             >
-              Guardar contacto
+              {isPending ? "Guardando" : "Guardar contacto"}
             </button>
           </form>
-        )}
       </section>
     </div>
   );

@@ -3,35 +3,17 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   ArrowLeft,
-  CheckCircle2,
   ClipboardList,
   Database,
   LockKeyhole,
   LogOut,
   ShieldCheck,
 } from "lucide-react";
-import { aidCenters, cityImpact } from "@/app/_data/aid-centers";
-
-const pendingReports = [
-  {
-    name: "Comedor Popular La 80",
-    area: "Laureles",
-    reporter: "Maria Fernanda R.",
-    signal: "WhatsApp verificado",
-  },
-  {
-    name: "Jornada Salud Manrique",
-    area: "Manrique",
-    reporter: "Aliado comunitario",
-    signal: "Evidencia pendiente",
-  },
-  {
-    name: "Ruta Donaciones Envigado",
-    area: "Sur del valle",
-    reporter: "Fundacion aliada",
-    signal: "Revisar alcance",
-  },
-];
+import {
+  getAdminDashboardData,
+  type AdminCenterSummary,
+  type AdminDashboardData,
+} from "@/app/_lib/supabase-data";
 
 const adminSessionCookie = "vlm_admin_access_token";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, "");
@@ -43,6 +25,7 @@ type AdminSearchParams = Promise<{
 }>;
 
 type SupabaseUser = {
+  accessToken?: string;
   email?: string;
   app_metadata?: Record<string, unknown>;
 };
@@ -150,7 +133,9 @@ export default async function AdminPage({
     return <AdminLogin status={status} />;
   }
 
-  return <AdminDashboard userEmail={adminUser.email ?? "Admin"} />;
+  const data = await getAdminDashboardData(adminUser.accessToken ?? "");
+
+  return <AdminDashboard data={data} userEmail={adminUser.email ?? "Admin"} />;
 }
 
 function AdminLogin({ status }: { status?: string }) {
@@ -237,7 +222,13 @@ function AdminLogin({ status }: { status?: string }) {
   );
 }
 
-function AdminDashboard({ userEmail }: { userEmail: string }) {
+function AdminDashboard({
+  data,
+  userEmail,
+}: {
+  data: AdminDashboardData;
+  userEmail: string;
+}) {
   return (
     <main className="min-h-dvh bg-[#fff8e8] px-4 py-5 text-[#17324d] sm:px-6 lg:px-10">
       <div className="mx-auto max-w-6xl">
@@ -262,7 +253,7 @@ function AdminDashboard({ userEmail }: { userEmail: string }) {
 
         <header className="mt-6">
           <p className="text-xs font-black uppercase text-[#ef6f61]">
-            Operacion Medellin
+            Operacion Colombia
           </p>
           <h1 className="mt-1 text-4xl font-black leading-tight">
             Cola de verificacion y datos de impacto
@@ -272,11 +263,17 @@ function AdminDashboard({ userEmail }: { userEmail: string }) {
           </p>
         </header>
 
+        {data.notice ? (
+          <div className="mt-5 rounded-[8px] border border-[#ef6f61]/25 bg-[#ffe2dd] p-4 text-sm font-bold leading-6 text-[#17324d]">
+            {data.notice}
+          </div>
+        ) : null}
+
         <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Metric label="Centros activos" value={cityImpact.activeCenters} />
-          <Metric label="Visitas registradas" value={cityImpact.monthlyVisits} />
-          <Metric label="Kg de ayuda" value={cityImpact.suppliesKg} />
-          <Metric label="Familias" value={cityImpact.families} />
+          <Metric label="Centros activos" value={data.impact.activeCenters} />
+          <Metric label="Visitas registradas" value={data.impact.monthlyVisits} />
+          <Metric label="Kg de ayuda" value={data.impact.suppliesKg} />
+          <Metric label="Familias" value={data.impact.families} />
         </section>
 
         <section className="mt-6 grid gap-4 lg:grid-cols-[1fr_0.82fr]">
@@ -286,39 +283,13 @@ function AdminDashboard({ userEmail }: { userEmail: string }) {
               <h2 className="text-lg font-black">Reportes pendientes</h2>
             </div>
             <div className="mt-4 grid gap-3">
-              {pendingReports.map((report) => (
-                <article
-                  className="rounded-[8px] border border-[#17324d]/10 bg-[#fffbf2] p-3"
-                  key={report.name}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="font-black">{report.name}</h3>
-                      <p className="mt-1 text-sm font-semibold text-[#617781]">
-                        {report.area} · {report.reporter}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-[#ffe8cc] px-2.5 py-1 text-xs font-black text-[#17324d]">
-                      {report.signal}
-                    </span>
-                  </div>
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      className="inline-flex min-h-10 items-center gap-2 rounded-[8px] bg-[#17324d] px-3 text-sm font-black text-white"
-                      type="button"
-                    >
-                      <CheckCircle2 aria-hidden="true" size={16} />
-                      Aprobar
-                    </button>
-                    <button
-                      className="inline-flex min-h-10 items-center gap-2 rounded-[8px] border border-[#17324d]/15 bg-white px-3 text-sm font-black text-[#17324d]"
-                      type="button"
-                    >
-                      Revisar
-                    </button>
-                  </div>
-                </article>
-              ))}
+              {data.pendingCenters.length > 0 ? (
+                data.pendingCenters.map((report) => (
+                  <AdminCenterCard center={report} key={report.id} />
+                ))
+              ) : (
+                <EmptyAdminState message="No hay reportes pendientes en Supabase." />
+              )}
             </div>
           </div>
 
@@ -328,17 +299,13 @@ function AdminDashboard({ userEmail }: { userEmail: string }) {
               <h2 className="text-lg font-black">Centros publicados</h2>
             </div>
             <div className="mt-4 grid gap-3">
-              {aidCenters.map((center) => (
-                <article
-                  className="rounded-[8px] border border-[#17324d]/10 p-3"
-                  key={center.id}
-                >
-                  <p className="font-black">{center.name}</p>
-                  <p className="mt-1 text-sm font-semibold text-[#617781]">
-                    {center.neighborhood} · {center.verifiedAt}
-                  </p>
-                </article>
-              ))}
+              {data.approvedCenters.length > 0 ? (
+                data.approvedCenters.map((center) => (
+                  <AdminCenterCard center={center} compact key={center.id} />
+                ))
+              ) : (
+                <EmptyAdminState message="No hay centros publicados en Supabase." />
+              )}
             </div>
           </div>
         </section>
@@ -376,7 +343,7 @@ async function getAdminUser() {
 
     const user = (await response.json()) as SupabaseUser;
 
-    return hasAdminRole(user) ? user : null;
+    return hasAdminRole(user) ? { ...user, accessToken } : null;
   } catch {
     return null;
   }
@@ -442,6 +409,55 @@ function Metric({ label, value }: { label: string; value: number }) {
       <p className="mt-1 text-xs font-black uppercase text-[#617781]">
         {label}
       </p>
+    </div>
+  );
+}
+
+function AdminCenterCard({
+  center,
+  compact = false,
+}: {
+  center: AdminCenterSummary;
+  compact?: boolean;
+}) {
+  return (
+    <article className="rounded-[8px] border border-[#17324d]/10 bg-[#fffbf2] p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="font-black">{center.name}</h3>
+          <p className="mt-1 text-sm font-semibold text-[#617781]">
+            {center.neighborhood} · {center.city}
+          </p>
+        </div>
+        <span className="rounded-full bg-[#ffe8cc] px-2.5 py-1 text-xs font-black text-[#17324d]">
+          {center.status}
+        </span>
+      </div>
+
+      <p className="mt-3 text-sm font-bold leading-6 text-[#49656f]">
+        {center.address}
+      </p>
+
+      {!compact ? (
+        <div className="mt-3 grid gap-2 rounded-[8px] border border-[#17324d]/10 bg-white p-3 text-xs font-bold leading-5 text-[#49656f]">
+          <p>Reporta: {center.reporter}</p>
+          <p>Contacto privado: {center.reporterContact || "Sin contacto"}</p>
+          <p>Senal: {center.signal}</p>
+          <p>Geocode: {center.geocodeLabel}</p>
+        </div>
+      ) : (
+        <p className="mt-2 text-sm font-semibold text-[#617781]">
+          Publicado: {center.verifiedAt}
+        </p>
+      )}
+    </article>
+  );
+}
+
+function EmptyAdminState({ message }: { message: string }) {
+  return (
+    <div className="rounded-[8px] border border-dashed border-[#17324d]/20 bg-[#fffbf2] p-4 text-sm font-black text-[#49656f]">
+      {message}
     </div>
   );
 }

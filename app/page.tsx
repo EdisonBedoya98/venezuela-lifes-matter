@@ -1,18 +1,19 @@
 import { AidMapExperience } from "@/app/_components/aid-map-experience";
-import {
-  aidCategories,
-  aidCenters,
-  aidCities,
-  cityImpact,
-} from "@/app/_data/aid-centers";
+import { getPublicMapData } from "@/app/_lib/supabase-data";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const { categories, centers, cities, impact, notice } =
+    await getPublicMapData();
+
   return (
     <AidMapExperience
-      categories={aidCategories}
-      centers={aidCenters}
-      cities={aidCities}
-      impact={cityImpact}
+      categories={categories}
+      centers={centers}
+      cities={cities}
+      impact={impact}
+      notice={notice}
     />
   );
 }

@@ -2,7 +2,7 @@
 
 import { importLibrary, setOptions } from "@googlemaps/js-api-loader";
 import { useEffect, useRef, useState } from "react";
-import type { AidCategory, AidCategoryId, AidCenter } from "@/app/_data/aid-centers";
+import type { AidCategory, AidCategoryId, AidCenter } from "@/app/_types/aid";
 
 type GoogleAidMapProps = {
   categoryById: Map<AidCategoryId, AidCategory>;
