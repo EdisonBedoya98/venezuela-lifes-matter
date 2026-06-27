@@ -239,13 +239,6 @@ export function AidMapExperience({
                 >
                   <ClipboardCheck aria-hidden="true" size={20} />
                 </Link>
-                <Link
-                  aria-label="Ir al panel admin"
-                  className="grid size-11 place-items-center rounded-[8px] border border-[#17324d]/10 bg-white text-[#17324d] shadow-sm transition hover:-translate-y-0.5"
-                  href="/admin"
-                >
-                  <ShieldCheck aria-hidden="true" size={20} />
-                </Link>
               </div>
             </div>
 
