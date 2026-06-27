@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, ClipboardCheck, LockKeyhole, Send } from "lucide-react";
 import { redirect } from "next/navigation";
+import { AttentionDaysField } from "@/app/_components/attention-days-field";
 import {
   Field,
   FormSection,
@@ -81,7 +82,7 @@ export default async function ReportPage({
                 <option value="donations">Donaciones</option>
                 <option value="volunteers">Voluntariado</option>
               </SelectField>
-              <Field label="Dias de atencion" name="hours" required />
+              <AttentionDaysField />
               <Field
                 label="Hora de inicio"
                 name="openingTime"
