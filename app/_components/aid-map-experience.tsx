@@ -6,6 +6,8 @@ import {
   ChevronDown,
   CheckCircle2,
   ClipboardCheck,
+  Copy,
+  Download,
   X,
   FileCheck2,
   Gift,
@@ -16,6 +18,7 @@ import {
   Navigation,
   Phone,
   Search,
+  Share2,
   ShieldCheck,
   Shirt,
   Soup,
@@ -77,6 +80,7 @@ const COLOMBIA_MAP = {
   },
   zoom: 5,
 };
+const CENTER_QUERY_PARAM = "centro";
 
 function getImpactFromCenters(centers: AidCenter[]) {
   return {
@@ -85,6 +89,236 @@ function getImpactFromCenters(centers: AidCenter[]) {
     monthlyVisits: centers.reduce((total, center) => total + center.impact.visits, 0),
     suppliesKg: centers.reduce((total, center) => total + center.impact.suppliesKg, 0),
   };
+}
+
+function getCenterShareUrl(center: AidCenter) {
+  if (typeof window === "undefined") {
+    return `/?${CENTER_QUERY_PARAM}=${center.id}`;
+  }
+
+  const url = new URL(window.location.href);
+
+  url.pathname = "/";
+  url.search = "";
+  url.hash = "";
+  url.searchParams.set(CENTER_QUERY_PARAM, center.id);
+
+  return url.toString();
+}
+
+function drawRoundedRect(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+) {
+  context.beginPath();
+  context.moveTo(x + radius, y);
+  context.lineTo(x + width - radius, y);
+  context.quadraticCurveTo(x + width, y, x + width, y + radius);
+  context.lineTo(x + width, y + height - radius);
+  context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  context.lineTo(x + radius, y + height);
+  context.quadraticCurveTo(x, y + height, x, y + height - radius);
+  context.lineTo(x, y + radius);
+  context.quadraticCurveTo(x, y, x + radius, y);
+  context.closePath();
+}
+
+function drawWrappedText(
+  context: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+  maxLines: number,
+) {
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let currentLine = "";
+
+  words.forEach((word) => {
+    const nextLine = currentLine ? `${currentLine} ${word}` : word;
+
+    if (context.measureText(nextLine).width <= maxWidth) {
+      currentLine = nextLine;
+      return;
+    }
+
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+    currentLine = word;
+  });
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  lines.slice(0, maxLines).forEach((line, index) => {
+    const finalLine =
+      index === maxLines - 1 && lines.length > maxLines ? `${line}...` : line;
+
+    context.fillText(finalLine, x, y + index * lineHeight);
+  });
+
+  return y + Math.min(lines.length, maxLines) * lineHeight;
+}
+
+function drawPill(
+  context: CanvasRenderingContext2D,
+  label: string,
+  x: number,
+  y: number,
+  fill: string,
+) {
+  context.font = "900 30px Arial";
+  const width = context.measureText(label).width + 42;
+
+  context.fillStyle = fill;
+  drawRoundedRect(context, x, y, width, 52, 26);
+  context.fill();
+  context.fillStyle = "#17324d";
+  context.fillText(label, x + 21, y + 36);
+
+  return width;
+}
+
+function generateInstagramImage(
+  center: AidCenter,
+  categoryById: Map<AidCategoryId, AidCategory>,
+  centerUrl: string,
+) {
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  canvas.width = 1080;
+  canvas.height = 1350;
+
+  if (!context) {
+    return "";
+  }
+
+  context.fillStyle = "#fff8e8";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  context.fillStyle = "#17324d";
+  drawRoundedRect(context, 56, 56, 968, 1238, 34);
+  context.fill();
+
+  context.fillStyle = "#24a7a1";
+  drawRoundedRect(context, 56, 56, 968, 252, 34);
+  context.fill();
+
+  context.fillStyle = "#f7c948";
+  context.beginPath();
+  context.arc(900, 104, 84, 0, Math.PI * 2);
+  context.fill();
+
+  context.fillStyle = "#17324d";
+  context.beginPath();
+  context.arc(900, 126, 34, 0, Math.PI * 2);
+  context.fill();
+  context.fillStyle = "#ef6f61";
+  context.beginPath();
+  context.moveTo(900, 202);
+  context.lineTo(866, 140);
+  context.lineTo(934, 140);
+  context.closePath();
+  context.fill();
+
+  context.fillStyle = "#ffffff";
+  context.font = "900 34px Arial";
+  context.fillText("VENEZUELA LIVES MATTER", 96, 128);
+  context.font = "900 64px Arial";
+  drawWrappedText(
+    context,
+    "Centro de ayuda verificado",
+    96,
+    206,
+    710,
+    72,
+    2,
+  );
+
+  context.fillStyle = "#fffbf2";
+  drawRoundedRect(context, 96, 360, 888, 640, 28);
+  context.fill();
+
+  context.fillStyle = "#ef6f61";
+  context.font = "900 34px Arial";
+  context.fillText(center.neighborhood.toUpperCase(), 136, 430);
+
+  context.fillStyle = "#17324d";
+  context.font = "900 70px Arial";
+  const afterTitleY = drawWrappedText(
+    context,
+    center.name,
+    136,
+    514,
+    810,
+    78,
+    3,
+  );
+
+  context.fillStyle = "#49656f";
+  context.font = "700 34px Arial";
+  let nextY = drawWrappedText(
+    context,
+    center.address,
+    136,
+    afterTitleY + 24,
+    810,
+    44,
+    2,
+  );
+
+  context.fillStyle = "#5cb85c";
+  context.font = "900 31px Arial";
+  nextY = drawWrappedText(context, center.hours, 136, nextY + 22, 810, 42, 2);
+
+  context.fillStyle = "#49656f";
+  context.font = "700 32px Arial";
+  drawWrappedText(context, center.description, 136, nextY + 30, 810, 43, 4);
+
+  let pillX = 136;
+  let pillY = 888;
+
+  center.categories.slice(0, 3).forEach((categoryId) => {
+    const category = categoryById.get(categoryId);
+    const width = drawPill(
+      context,
+      category?.shortLabel ?? categoryId,
+      pillX,
+      pillY,
+      category?.surface ?? "#d7f8f2",
+    );
+
+    pillX += width + 12;
+    if (pillX > 740) {
+      pillX = 136;
+      pillY += 64;
+    }
+  });
+
+  context.fillStyle = "#f7c948";
+  drawRoundedRect(context, 96, 1048, 888, 158, 28);
+  context.fill();
+
+  context.fillStyle = "#17324d";
+  context.font = "900 38px Arial";
+  context.fillText("Encuentra la ruta y comparte este centro", 136, 1110);
+  context.font = "800 28px Arial";
+  drawWrappedText(context, centerUrl, 136, 1160, 810, 36, 2);
+
+  context.fillStyle = "#ffffff";
+  context.font = "900 28px Arial";
+  context.fillText("Comparte el link en tu historia o bio para abrir el mapa directo.", 96, 1260);
+
+  return canvas.toDataURL("image/png");
 }
 
 export function AidMapExperience({
@@ -98,7 +332,9 @@ export function AidMapExperience({
   const [isCenterPanelExpanded, setIsCenterPanelExpanded] = useState(false);
   const [isUpdatesModalOpen, setIsUpdatesModalOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [shareCenterId, setShareCenterId] = useState<string>();
   const [selectedCenterId, setSelectedCenterId] = useState<string>();
+  const appliedUrlCenterRef = useRef(false);
   const mobileCenterDetailsRef = useRef<HTMLElement | null>(null);
 
   const categoryById = useMemo(
@@ -165,16 +401,58 @@ export function AidMapExperience({
   const selectedCenter = selectedCenterId
     ? filteredCenters.find((center) => center.id === selectedCenterId)
     : undefined;
+  const shareCenter = shareCenterId
+    ? centers.find((center) => center.id === shareCenterId)
+    : undefined;
+
+  const updateCenterUrl = useCallback((centerId?: string) => {
+    const url = new URL(window.location.href);
+
+    if (centerId) {
+      url.searchParams.set(CENTER_QUERY_PARAM, centerId);
+    } else {
+      url.searchParams.delete(CENTER_QUERY_PARAM);
+    }
+
+    window.history.replaceState(null, "", `${url.pathname}${url.search}`);
+  }, []);
 
   const selectCenter = useCallback((centerId: string) => {
     setSelectedCenterId(centerId);
     setIsCenterPanelExpanded(true);
-  }, []);
+    updateCenterUrl(centerId);
+  }, [updateCenterUrl]);
 
   const clearSelectedCenter = useCallback(() => {
     setSelectedCenterId(undefined);
     setIsCenterPanelExpanded(false);
-  }, []);
+    updateCenterUrl();
+  }, [updateCenterUrl]);
+
+  useEffect(() => {
+    if (appliedUrlCenterRef.current) {
+      return;
+    }
+
+    appliedUrlCenterRef.current = true;
+
+    const params = new URLSearchParams(window.location.search);
+    const centerId =
+      params.get(CENTER_QUERY_PARAM) ?? params.get("center") ?? params.get("id");
+    const linkedCenter = centers.find((center) => center.id === centerId);
+
+    if (!linkedCenter) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      setActiveCityId(linkedCenter.cityId);
+      setActiveFilter("all");
+      setQuery("");
+      setSelectedCenterId(linkedCenter.id);
+      setIsCenterPanelExpanded(true);
+    });
+  }, [centers]);
 
   useEffect(() => {
     if (!isCenterPanelExpanded || !selectedCenterId) {
@@ -206,6 +484,7 @@ export function AidMapExperience({
     setQuery("");
     setSelectedCenterId(undefined);
     setIsCenterPanelExpanded(false);
+    updateCenterUrl();
   };
 
   const resetFilterIfHidden = (filter: CategoryFilter) => {
@@ -216,8 +495,11 @@ export function AidMapExperience({
 
     setSelectedCenterId(firstMatch?.id);
     setIsCenterPanelExpanded(false);
+    updateCenterUrl(firstMatch?.id);
   };
 
+  const openShareModal = (centerId: string) => setShareCenterId(centerId);
+  const closeShareModal = () => setShareCenterId(undefined);
   const openUpdatesModal = () => setIsUpdatesModalOpen(true);
   const closeUpdatesModal = () => setIsUpdatesModalOpen(false);
 
@@ -366,6 +648,7 @@ export function AidMapExperience({
                 categoryById={categoryById}
                 expanded={isCenterPanelExpanded}
                 onClear={clearSelectedCenter}
+                onOpenShare={openShareModal}
                 onOpenUpdates={openUpdatesModal}
                 onToggleExpanded={() =>
                   setIsCenterPanelExpanded((expanded) => !expanded)
@@ -382,6 +665,7 @@ export function AidMapExperience({
               categoryById={categoryById}
               expanded={isCenterPanelExpanded}
               onClear={clearSelectedCenter}
+              onOpenShare={openShareModal}
               onOpenUpdates={openUpdatesModal}
               onToggleExpanded={() =>
                 setIsCenterPanelExpanded((expanded) => !expanded)
@@ -393,6 +677,7 @@ export function AidMapExperience({
             <SelectedCenterDetails
               center={selectedCenter}
               categoryById={categoryById}
+              onOpenShare={openShareModal}
               onOpenUpdates={openUpdatesModal}
               ref={mobileCenterDetailsRef}
             />
@@ -404,6 +689,14 @@ export function AidMapExperience({
         isOpen={isUpdatesModalOpen}
         onClose={closeUpdatesModal}
       />
+      {shareCenter ? (
+        <CenterShareModal
+          center={shareCenter}
+          categoryById={categoryById}
+          cityName={cityById.get(shareCenter.cityId)?.name ?? "Colombia"}
+          onClose={closeShareModal}
+        />
+      ) : null}
     </main>
   );
 }
@@ -673,9 +966,11 @@ function CenterCategoryTags({
 
 function CenterActions({
   center,
+  onOpenShare,
   onOpenUpdates,
 }: {
   center: AidCenter;
+  onOpenShare: (centerId: string) => void;
   onOpenUpdates: () => void;
 }) {
   const contactHref = getContactHref(center.publicContact);
@@ -688,7 +983,7 @@ function CenterActions({
     "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[8px] px-2 text-xs font-black transition hover:-translate-y-0.5";
 
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <div className="grid grid-cols-2 gap-2">
       <button
         className={`${actionClass} bg-[#24a7a1] text-white`}
         onClick={onOpenUpdates}
@@ -723,6 +1018,14 @@ function CenterActions({
           Contacto
         </span>
       )}
+      <button
+        className={`${actionClass} border border-[#17324d]/15 bg-[#fff3bf] text-[#17324d]`}
+        onClick={() => onOpenShare(center.id)}
+        type="button"
+      >
+        <Share2 aria-hidden="true" size={15} />
+        Compartir
+      </button>
     </div>
   );
 }
@@ -759,6 +1062,7 @@ function SelectedCenterPreview({
   categoryById,
   expanded,
   onClear,
+  onOpenShare,
   onToggleExpanded,
   onOpenUpdates,
 }: {
@@ -766,6 +1070,7 @@ function SelectedCenterPreview({
   categoryById: Map<AidCategoryId, AidCategory>;
   expanded: boolean;
   onClear: () => void;
+  onOpenShare: (centerId: string) => void;
   onToggleExpanded: () => void;
   onOpenUpdates: () => void;
 }) {
@@ -799,7 +1104,7 @@ function SelectedCenterPreview({
         </button>
       </div>
 
-      <div className="mt-3 grid grid-cols-3 gap-2">
+      <div className="mt-3 grid grid-cols-2 gap-2">
         <button
           className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[8px] bg-[#24a7a1] px-2 text-[11px] font-black text-white"
           onClick={onOpenUpdates}
@@ -831,6 +1136,14 @@ function SelectedCenterPreview({
           />
           Detalle
         </button>
+        <button
+          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[8px] border border-[#17324d]/15 bg-[#fff3bf] px-2 text-[11px] font-black text-[#17324d]"
+          onClick={() => onOpenShare(center.id)}
+          type="button"
+        >
+          <Share2 aria-hidden="true" size={14} />
+          Compartir
+        </button>
       </div>
     </aside>
   );
@@ -841,6 +1154,7 @@ function SelectedCenterPanel({
   categoryById,
   expanded,
   onClear,
+  onOpenShare,
   onToggleExpanded,
   onOpenUpdates,
 }: {
@@ -848,6 +1162,7 @@ function SelectedCenterPanel({
   categoryById: Map<AidCategoryId, AidCategory>;
   expanded: boolean;
   onClear: () => void;
+  onOpenShare: (centerId: string) => void;
   onToggleExpanded: () => void;
   onOpenUpdates: () => void;
 }) {
@@ -894,7 +1209,11 @@ function SelectedCenterPanel({
       </div>
 
       <div className="mt-3">
-        <CenterActions center={center} onOpenUpdates={onOpenUpdates} />
+        <CenterActions
+          center={center}
+          onOpenShare={onOpenShare}
+          onOpenUpdates={onOpenUpdates}
+        />
       </div>
 
       <p className="mt-4 border-t border-[#17324d]/10 pt-4 text-sm leading-6 text-[#49656f]">
@@ -918,10 +1237,11 @@ const SelectedCenterDetails = forwardRef<
   {
     center: AidCenter;
     categoryById: Map<AidCategoryId, AidCategory>;
+    onOpenShare: (centerId: string) => void;
     onOpenUpdates: () => void;
   }
 >(function SelectedCenterDetails(
-  { center, categoryById, onOpenUpdates },
+  { center, categoryById, onOpenShare, onOpenUpdates },
   ref,
 ) {
   return (
@@ -948,7 +1268,11 @@ const SelectedCenterDetails = forwardRef<
       </div>
 
       <div className="mt-4">
-        <CenterActions center={center} onOpenUpdates={onOpenUpdates} />
+        <CenterActions
+          center={center}
+          onOpenShare={onOpenShare}
+          onOpenUpdates={onOpenUpdates}
+        />
       </div>
 
       <div className="mt-4 grid gap-4 border-t border-[#17324d]/10 pt-4">
@@ -994,6 +1318,167 @@ function EmptyCenterPanel() {
         Reportar centro
       </Link>
     </aside>
+  );
+}
+
+function CenterShareModal({
+  center,
+  categoryById,
+  cityName,
+  onClose,
+}: {
+  center: AidCenter;
+  categoryById: Map<AidCategoryId, AidCategory>;
+  cityName: string;
+  onClose: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
+  const centerUrl = useMemo(() => getCenterShareUrl(center), [center]);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      setCopied(false);
+      setImageUrl(generateInstagramImage(center, categoryById, centerUrl));
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [categoryById, center, centerUrl]);
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(centerUrl);
+    } catch {
+      const input = document.createElement("textarea");
+
+      input.value = centerUrl;
+      input.style.position = "fixed";
+      input.style.opacity = "0";
+      document.body.append(input);
+      input.select();
+      document.execCommand("copy");
+      input.remove();
+    }
+
+    setCopied(true);
+  };
+
+  const nativeShare = async () => {
+    if (!navigator.share) {
+      await copyLink();
+      return;
+    }
+
+    try {
+      await navigator.share({
+        title: `${center.name} | Venezuela Lives Matter`,
+        text: `Centro de ayuda en ${cityName}: ${center.name}`,
+        url: centerUrl,
+      });
+    } catch {
+      // User cancelled or the browser blocked native share.
+    }
+  };
+
+  const downloadImage = () => {
+    if (!imageUrl) {
+      return;
+    }
+
+    const link = document.createElement("a");
+
+    link.download = `${center.id}-instagram.png`;
+    link.href = imageUrl;
+    link.click();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-end bg-[#17324d]/42 px-3 py-3 backdrop-blur-sm sm:place-items-center">
+      <section
+        aria-labelledby="share-modal-title"
+        aria-modal="true"
+        className="grid max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl gap-4 overflow-y-auto rounded-[12px] border border-white/70 bg-[#fffbf2] p-4 text-[#17324d] shadow-[0_24px_90px_rgba(23,50,77,0.28)] sm:grid-cols-[0.82fr_1fr] sm:p-5"
+        role="dialog"
+      >
+        <div className="flex min-h-0 flex-col">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase text-[#ef6f61]">
+                Compartir centro
+              </p>
+              <h2
+                className="mt-1 text-2xl font-black leading-tight"
+                id="share-modal-title"
+              >
+                {center.name}
+              </h2>
+              <p className="mt-2 text-sm font-bold leading-6 text-[#49656f]">
+                {center.neighborhood}, {cityName}
+              </p>
+            </div>
+            <button
+              aria-label="Cerrar"
+              className="grid size-10 shrink-0 place-items-center rounded-[8px] border border-[#17324d]/10 bg-white text-[#17324d]"
+              onClick={onClose}
+              type="button"
+            >
+              <X aria-hidden="true" size={18} />
+            </button>
+          </div>
+
+          <div className="mt-4 rounded-[8px] border border-[#17324d]/10 bg-white p-3">
+            <p className="text-xs font-black uppercase text-[#617781]">
+              Link directo
+            </p>
+            <p className="mt-2 break-all text-xs font-bold leading-5 text-[#17324d] sm:text-sm sm:leading-6">
+              {centerUrl}
+            </p>
+          </div>
+
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <button
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#17324d] px-3 text-sm font-black text-white"
+              onClick={copyLink}
+              type="button"
+            >
+              <Copy aria-hidden="true" size={17} />
+              {copied ? "Link copiado" : "Copiar link"}
+            </button>
+            <button
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#24a7a1] px-3 text-sm font-black text-white"
+              onClick={nativeShare}
+              type="button"
+            >
+              <Share2 aria-hidden="true" size={17} />
+              Compartir
+            </button>
+            <button
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#f7c948] px-3 text-sm font-black text-[#17324d] sm:col-span-2"
+              onClick={downloadImage}
+              type="button"
+            >
+              <Download aria-hidden="true" size={17} />
+              Descargar imagen para Instagram
+            </button>
+          </div>
+        </div>
+
+        <div className="grid place-items-center rounded-[8px] bg-[#17324d] p-3">
+          {imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              alt={`Imagen para compartir ${center.name}`}
+              className="max-h-[58dvh] w-auto rounded-[8px] border border-white/15 shadow-2xl"
+              src={imageUrl}
+            />
+          ) : (
+            <div className="grid aspect-[4/5] w-full place-items-center rounded-[8px] bg-white/10 text-sm font-black text-white">
+              Generando imagen
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
   );
 }
 
