@@ -73,6 +73,7 @@ const categoryIcons = {
 } satisfies Record<AidCategoryId, typeof Soup>;
 
 const formatNumber = new Intl.NumberFormat("es-CO");
+const SHARE_PIN_IMAGE_URL = "/pin-velezuela.webp";
 const COLOMBIA_MAP = {
   center: {
     lat: 4.5709,
@@ -187,11 +188,36 @@ function drawPill(
   return width;
 }
 
-function generateInstagramImage(
+function loadCanvasImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+
+    image.decoding = "async";
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error(`No se pudo cargar ${src}`));
+    image.src = src;
+  });
+}
+
+function drawShareBrandIcon(
+  context: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+) {
+  context.save();
+  context.fillStyle = "#fffbf2";
+  context.beginPath();
+  context.arc(900, 136, 96, 0, Math.PI * 2);
+  context.fill();
+  context.drawImage(image, 806, 42, 188, 188);
+  context.restore();
+}
+
+async function generateInstagramImage(
   center: AidCenter,
   categoryById: Map<AidCategoryId, AidCategory>,
   centerUrl: string,
 ) {
+  const brandIcon = await loadCanvasImage(SHARE_PIN_IMAGE_URL);
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
 
@@ -213,22 +239,7 @@ function generateInstagramImage(
   drawRoundedRect(context, 56, 56, 968, 252, 34);
   context.fill();
 
-  context.fillStyle = "#f7c948";
-  context.beginPath();
-  context.arc(900, 104, 84, 0, Math.PI * 2);
-  context.fill();
-
-  context.fillStyle = "#17324d";
-  context.beginPath();
-  context.arc(900, 126, 34, 0, Math.PI * 2);
-  context.fill();
-  context.fillStyle = "#ef6f61";
-  context.beginPath();
-  context.moveTo(900, 202);
-  context.lineTo(866, 140);
-  context.lineTo(934, 140);
-  context.closePath();
-  context.fill();
+  drawShareBrandIcon(context, brandIcon);
 
   context.fillStyle = "#ffffff";
   context.font = "900 34px Arial";
@@ -1339,12 +1350,29 @@ function CenterShareModal({
   const centerUrl = useMemo(() => getCenterShareUrl(center), [center]);
 
   useEffect(() => {
+    let cancelled = false;
+
     const frame = window.requestAnimationFrame(() => {
       setCopied(false);
-      setImageUrl(generateInstagramImage(center, categoryById, centerUrl));
+      setImageUrl("");
+
+      generateInstagramImage(center, categoryById, centerUrl)
+        .then((generatedImageUrl) => {
+          if (!cancelled) {
+            setImageUrl(generatedImageUrl);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setImageUrl("");
+          }
+        });
     });
 
-    return () => window.cancelAnimationFrame(frame);
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frame);
+    };
   }, [categoryById, center, centerUrl]);
 
   const copyLink = async () => {
