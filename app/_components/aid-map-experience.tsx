@@ -34,6 +34,10 @@ import {
   useRef,
   useState,
 } from "react";
+import {
+  submitVolunteerApplication,
+  type VolunteerApplicationResult,
+} from "@/app/_actions/volunteer-applications";
 import { GoogleAidMap } from "@/app/_components/google-aid-map";
 import type {
   AidCategory,
@@ -82,6 +86,14 @@ const COLOMBIA_MAP = {
   zoom: 5,
 };
 const CENTER_QUERY_PARAM = "centro";
+const volunteerSupportOptions = [
+  "Entrega o recoleccion de comida",
+  "Logistica en jornadas",
+  "Orientacion documental",
+  "Comunicaciones y redes",
+  "Transporte",
+  "Salud o primeros auxilios",
+];
 
 function getImpactFromCenters(centers: AidCenter[]) {
   return {
@@ -345,6 +357,7 @@ export function AidMapExperience({
   const [query, setQuery] = useState("");
   const [shareCenterId, setShareCenterId] = useState<string>();
   const [selectedCenterId, setSelectedCenterId] = useState<string>();
+  const [volunteerCenterId, setVolunteerCenterId] = useState<string>();
   const appliedUrlCenterRef = useRef(false);
   const mobileCenterDetailsRef = useRef<HTMLElement | null>(null);
 
@@ -414,6 +427,9 @@ export function AidMapExperience({
     : undefined;
   const shareCenter = shareCenterId
     ? centers.find((center) => center.id === shareCenterId)
+    : undefined;
+  const volunteerCenter = volunteerCenterId
+    ? centers.find((center) => center.id === volunteerCenterId)
     : undefined;
 
   const updateCenterUrl = useCallback((centerId?: string) => {
@@ -511,6 +527,8 @@ export function AidMapExperience({
 
   const openShareModal = (centerId: string) => setShareCenterId(centerId);
   const closeShareModal = () => setShareCenterId(undefined);
+  const openVolunteerModal = (centerId: string) => setVolunteerCenterId(centerId);
+  const closeVolunteerModal = () => setVolunteerCenterId(undefined);
   const openUpdatesModal = () => setIsUpdatesModalOpen(true);
   const closeUpdatesModal = () => setIsUpdatesModalOpen(false);
 
@@ -661,6 +679,7 @@ export function AidMapExperience({
                 onClear={clearSelectedCenter}
                 onOpenShare={openShareModal}
                 onOpenUpdates={openUpdatesModal}
+                onOpenVolunteer={openVolunteerModal}
                 onToggleExpanded={() =>
                   setIsCenterPanelExpanded((expanded) => !expanded)
                 }
@@ -678,6 +697,7 @@ export function AidMapExperience({
               onClear={clearSelectedCenter}
               onOpenShare={openShareModal}
               onOpenUpdates={openUpdatesModal}
+              onOpenVolunteer={openVolunteerModal}
               onToggleExpanded={() =>
                 setIsCenterPanelExpanded((expanded) => !expanded)
               }
@@ -690,6 +710,7 @@ export function AidMapExperience({
               categoryById={categoryById}
               onOpenShare={openShareModal}
               onOpenUpdates={openUpdatesModal}
+              onOpenVolunteer={openVolunteerModal}
               ref={mobileCenterDetailsRef}
             />
           ) : null}
@@ -706,6 +727,13 @@ export function AidMapExperience({
           categoryById={categoryById}
           cityName={cityById.get(shareCenter.cityId)?.name ?? "Colombia"}
           onClose={closeShareModal}
+        />
+      ) : null}
+      {volunteerCenter ? (
+        <VolunteerApplicationModal
+          center={volunteerCenter}
+          cityName={cityById.get(volunteerCenter.cityId)?.name ?? "Colombia"}
+          onClose={closeVolunteerModal}
         />
       ) : null}
     </main>
@@ -981,10 +1009,12 @@ function CenterActions({
   center,
   onOpenShare,
   onOpenUpdates,
+  onOpenVolunteer,
 }: {
   center: AidCenter;
   onOpenShare: (centerId: string) => void;
   onOpenUpdates: () => void;
+  onOpenVolunteer: (centerId: string) => void;
 }) {
   const contactHref = getContactHref(center.publicContact);
   const contactIcon = center.publicContact.includes("@") ? (
@@ -997,6 +1027,14 @@ function CenterActions({
 
   return (
     <div className="grid grid-cols-2 gap-2">
+      <button
+        className={`${actionClass} col-span-2 bg-[#f7c948] text-[#17324d] shadow-sm`}
+        onClick={() => onOpenVolunteer(center.id)}
+        type="button"
+      >
+        <UsersRound aria-hidden="true" size={16} />
+        Postularme como voluntario
+      </button>
       <button
         className={`${actionClass} bg-[#24a7a1] text-white`}
         onClick={onOpenUpdates}
@@ -1078,6 +1116,7 @@ function SelectedCenterPreview({
   onOpenShare,
   onToggleExpanded,
   onOpenUpdates,
+  onOpenVolunteer,
 }: {
   center: AidCenter;
   categoryById: Map<AidCategoryId, AidCategory>;
@@ -1086,6 +1125,7 @@ function SelectedCenterPreview({
   onOpenShare: (centerId: string) => void;
   onToggleExpanded: () => void;
   onOpenUpdates: () => void;
+  onOpenVolunteer: (centerId: string) => void;
 }) {
   return (
     <aside className="mx-4 mt-3 rounded-[12px] border border-[#17324d]/10 bg-[#fffbf2] p-3 shadow-sm lg:hidden">
@@ -1118,6 +1158,14 @@ function SelectedCenterPreview({
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
+        <button
+          className="col-span-2 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[8px] bg-[#f7c948] px-2 text-xs font-black text-[#17324d]"
+          onClick={() => onOpenVolunteer(center.id)}
+          type="button"
+        >
+          <UsersRound aria-hidden="true" size={15} />
+          Postularme como voluntario
+        </button>
         <button
           className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[8px] bg-[#24a7a1] px-2 text-[11px] font-black text-white"
           onClick={onOpenUpdates}
@@ -1170,6 +1218,7 @@ function SelectedCenterPanel({
   onOpenShare,
   onToggleExpanded,
   onOpenUpdates,
+  onOpenVolunteer,
 }: {
   center: AidCenter;
   categoryById: Map<AidCategoryId, AidCategory>;
@@ -1178,6 +1227,7 @@ function SelectedCenterPanel({
   onOpenShare: (centerId: string) => void;
   onToggleExpanded: () => void;
   onOpenUpdates: () => void;
+  onOpenVolunteer: (centerId: string) => void;
 }) {
   return (
     <aside className="absolute right-5 top-24 z-20 hidden max-h-[calc(100dvh-8rem)] w-[360px] overflow-y-auto rounded-[12px] border border-white/75 bg-[#fffbf2]/96 p-4 shadow-[0_18px_58px_rgba(23,50,77,0.18)] backdrop-blur lg:block">
@@ -1226,6 +1276,7 @@ function SelectedCenterPanel({
           center={center}
           onOpenShare={onOpenShare}
           onOpenUpdates={onOpenUpdates}
+          onOpenVolunteer={onOpenVolunteer}
         />
       </div>
 
@@ -1252,9 +1303,10 @@ const SelectedCenterDetails = forwardRef<
     categoryById: Map<AidCategoryId, AidCategory>;
     onOpenShare: (centerId: string) => void;
     onOpenUpdates: () => void;
+    onOpenVolunteer: (centerId: string) => void;
   }
 >(function SelectedCenterDetails(
-  { center, categoryById, onOpenShare, onOpenUpdates },
+  { center, categoryById, onOpenShare, onOpenUpdates, onOpenVolunteer },
   ref,
 ) {
   return (
@@ -1285,6 +1337,7 @@ const SelectedCenterDetails = forwardRef<
           center={center}
           onOpenShare={onOpenShare}
           onOpenUpdates={onOpenUpdates}
+          onOpenVolunteer={onOpenVolunteer}
         />
       </div>
 
@@ -1507,6 +1560,223 @@ function CenterShareModal({
             </div>
           )}
         </div>
+      </section>
+    </div>
+  );
+}
+
+function VolunteerApplicationModal({
+  center,
+  cityName,
+  onClose,
+}: {
+  center: AidCenter;
+  cityName: string;
+  onClose: () => void;
+}) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [result, setResult] = useState<VolunteerApplicationResult>();
+
+  const submitApplication = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    setIsSubmitting(true);
+    setResult(undefined);
+
+    const nextResult = await submitVolunteerApplication(formData);
+
+    setResult(nextResult);
+    setIsSubmitting(false);
+
+    if (nextResult.ok) {
+      form.reset();
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-end bg-[#17324d]/42 px-3 py-3 backdrop-blur-sm sm:place-items-center">
+      <section
+        aria-labelledby="volunteer-modal-title"
+        aria-modal="true"
+        className="max-h-[calc(100dvh-1.5rem)] w-full max-w-3xl overflow-y-auto rounded-[12px] border border-white/70 bg-[#fffbf2] p-4 text-[#17324d] shadow-[0_24px_90px_rgba(23,50,77,0.28)] sm:p-5"
+        role="dialog"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase text-[#ef6f61]">
+              Voluntariado
+            </p>
+            <h2
+              className="mt-1 text-2xl font-black leading-tight"
+              id="volunteer-modal-title"
+            >
+              Postularme como voluntario
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[#49656f]">
+              Tus datos llegan al equipo de Venezuela Lives Matter para revisar
+              la postulacion y coordinar contacto con el centro seleccionado.
+            </p>
+          </div>
+          <button
+            aria-label="Cerrar"
+            className="grid size-10 shrink-0 place-items-center rounded-[8px] border border-[#17324d]/10 bg-white text-[#17324d]"
+            onClick={onClose}
+            type="button"
+          >
+            <X aria-hidden="true" size={18} />
+          </button>
+        </div>
+
+        <div className="mt-4 rounded-[8px] border border-[#17324d]/10 bg-white p-3">
+          <p className="text-xs font-black uppercase text-[#617781]">
+            Centro seleccionado
+          </p>
+          <p className="mt-1 text-lg font-black leading-tight text-[#17324d]">
+            {center.name}
+          </p>
+          <p className="mt-1 text-sm font-bold text-[#49656f]">
+            {center.neighborhood}, {cityName}
+          </p>
+        </div>
+
+        {result?.ok ? (
+          <div className="mt-5 rounded-[8px] border border-[#5cb85c]/30 bg-[#dff4dd] p-4">
+            <p className="text-sm font-black text-[#17324d]">{result.message}</p>
+            <button
+              className="mt-4 inline-flex min-h-11 items-center justify-center rounded-[8px] bg-[#17324d] px-4 text-sm font-black text-white"
+              onClick={onClose}
+              type="button"
+            >
+              Cerrar
+            </button>
+          </div>
+        ) : (
+          <form className="mt-5 grid gap-4" onSubmit={submitApplication}>
+            <input name="centerId" type="hidden" value={center.id} />
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="grid gap-2 text-sm font-black">
+                Nombre completo
+                <input
+                  className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-white px-3 font-semibold outline-none focus:border-[#24a7a1]"
+                  name="fullName"
+                  required
+                  type="text"
+                />
+              </label>
+              <label className="grid gap-2 text-sm font-black">
+                Correo
+                <input
+                  className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-white px-3 font-semibold outline-none focus:border-[#24a7a1]"
+                  name="email"
+                  required
+                  type="email"
+                />
+              </label>
+              <label className="grid gap-2 text-sm font-black">
+                WhatsApp o telefono
+                <input
+                  className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-white px-3 font-semibold outline-none focus:border-[#24a7a1]"
+                  name="phone"
+                  required
+                  type="tel"
+                />
+              </label>
+              <label className="grid gap-2 text-sm font-black">
+                Ciudad donde estas
+                <input
+                  className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-white px-3 font-semibold outline-none focus:border-[#24a7a1]"
+                  name="volunteerCity"
+                  required
+                  type="text"
+                />
+              </label>
+              <label className="grid gap-2 text-sm font-black md:col-span-2">
+                Disponibilidad
+                <select
+                  className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-white px-3 font-semibold outline-none focus:border-[#24a7a1]"
+                  name="availability"
+                  required
+                >
+                  <option value="">Seleccionar disponibilidad</option>
+                  <option value="Entre semana en la manana">
+                    Entre semana en la manana
+                  </option>
+                  <option value="Entre semana en la tarde">
+                    Entre semana en la tarde
+                  </option>
+                  <option value="Fines de semana">Fines de semana</option>
+                  <option value="Turnos puntuales">Turnos puntuales</option>
+                  <option value="Remoto">Remoto</option>
+                </select>
+              </label>
+            </div>
+
+            <fieldset className="grid gap-2 rounded-[8px] border border-[#17324d]/10 bg-white p-3">
+              <legend className="px-2 text-sm font-black">
+                Formas en las que puedes apoyar
+              </legend>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {volunteerSupportOptions.map((option) => (
+                  <label
+                    className="flex min-h-10 items-center gap-2 rounded-[8px] bg-[#fffbf2] px-3 text-sm font-bold"
+                    key={option}
+                  >
+                    <input
+                      className="size-4 shrink-0"
+                      name="supportAreas"
+                      type="checkbox"
+                      value={option}
+                    />
+                    {option}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <label className="grid gap-2 text-sm font-black">
+              Mensaje para el equipo
+              <textarea
+                className="min-h-24 rounded-[8px] border border-[#17324d]/15 bg-white px-3 py-3 font-semibold outline-none focus:border-[#24a7a1]"
+                name="message"
+                placeholder="Cuéntanos experiencia, horarios o algo clave para coordinar."
+              />
+            </label>
+
+            <label className="flex gap-3 rounded-[8px] border border-[#17324d]/10 bg-white p-3 text-sm font-semibold leading-6 text-[#49656f]">
+              <input
+                className="mt-1 size-4 shrink-0"
+                name="shareConsent"
+                required
+                type="checkbox"
+              />
+              Autorizo que Venezuela Lives Matter use mis datos para revisar mi
+              postulacion y pueda compartirlos con este centro para coordinar
+              voluntariado.
+            </label>
+
+            {result && !result.ok ? (
+              <div
+                aria-live="polite"
+                className="rounded-[8px] border border-[#ef6f61]/30 bg-[#ffe2dd] p-3 text-sm font-bold text-[#17324d]"
+              >
+                {result.message}
+              </div>
+            ) : null}
+
+            <button
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[8px] bg-[#17324d] px-4 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isSubmitting}
+              type="submit"
+            >
+              <UsersRound aria-hidden="true" size={18} />
+              {isSubmitting ? "Enviando postulacion" : "Enviar postulacion"}
+            </button>
+          </form>
+        )}
       </section>
     </div>
   );
