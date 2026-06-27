@@ -10,9 +10,11 @@ import {
   LockKeyhole,
   LogOut,
   ShieldCheck,
+  Trash2,
   XCircle,
 } from "lucide-react";
 import {
+  deleteCenter,
   getAdminDashboardData,
   reviewPendingCenter,
   type AdminCenterSummary,
@@ -157,6 +159,31 @@ async function reviewCenter(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/admin");
   redirect(`/admin?status=${result.status}`);
+}
+
+async function deletePublishedCenter(formData: FormData) {
+  "use server";
+
+  const adminUser = await getAdminUser();
+
+  if (!adminUser?.accessToken) {
+    redirect("/admin?status=session");
+  }
+
+  const centerId = String(formData.get("centerId") ?? "");
+
+  if (!centerId) {
+    redirect("/admin?status=delete-error");
+  }
+
+  const result = await deleteCenter({
+    accessToken: adminUser.accessToken,
+    centerId,
+  });
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  redirect(`/admin?status=${result.status === "error" ? "delete-error" : result.status}`);
 }
 
 export default async function AdminPage({
@@ -534,9 +561,21 @@ function AdminCenterCard({
           </div>
         </div>
       ) : (
-        <p className="mt-2 text-sm font-semibold text-[#617781]">
-          Publicado: {center.verifiedAt}
-        </p>
+        <div className="mt-3 grid gap-3">
+          <p className="text-sm font-semibold text-[#617781]">
+            Publicado: {center.verifiedAt}
+          </p>
+          <form action={deletePublishedCenter}>
+            <input name="centerId" type="hidden" value={center.databaseId} />
+            <button
+              className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#ef6f61]/30 bg-[#ffe2dd] px-3 text-sm font-black text-[#17324d] transition hover:-translate-y-0.5"
+              type="submit"
+            >
+              <Trash2 aria-hidden="true" size={16} />
+              Borrar centro
+            </button>
+          </form>
+        </div>
       )}
     </article>
   );
@@ -565,6 +604,13 @@ function getAdminActionStatusMessage(status?: string) {
     };
   }
 
+  if (status === "deleted") {
+    return {
+      message: "Centro borrado del mapa y del panel.",
+      tone: "success" as const,
+    };
+  }
+
   if (status === "config") {
     return {
       message: "Falta configuracion privada para revisar centros.",
@@ -575,6 +621,13 @@ function getAdminActionStatusMessage(status?: string) {
   if (status === "review-error") {
     return {
       message: "No pudimos procesar esa revision. Intenta de nuevo.",
+      tone: "error" as const,
+    };
+  }
+
+  if (status === "delete-error") {
+    return {
+      message: "No pudimos borrar ese centro. Intenta de nuevo.",
       tone: "error" as const,
     };
   }

@@ -7,7 +7,7 @@ type DataServiceConfig = {
 
 type RestOptions = {
   body?: unknown;
-  method?: "GET" | "POST" | "PATCH";
+  method?: "DELETE" | "GET" | "POST" | "PATCH";
   prefer?: string;
   serviceRole?: boolean;
   token?: string;
@@ -120,6 +120,10 @@ export type CenterSubmissionResult = {
 
 export type CenterReviewResult = {
   status: "approved" | "rejected" | "config" | "error";
+};
+
+export type CenterDeleteResult = {
+  status: "deleted" | "config" | "error";
 };
 
 const legacyProviderPrefix = "SUPA" + "BASE";
@@ -411,6 +415,35 @@ export async function reviewPendingCenter({
     );
 
     return { status: decision };
+  } catch (error) {
+    console.error(error);
+
+    return { status: "error" };
+  }
+}
+
+export async function deleteCenter({
+  accessToken,
+  centerId,
+}: {
+  accessToken: string;
+  centerId: string;
+}): Promise<CenterDeleteResult> {
+  if (!getPublicDataServiceConfig()) {
+    return { status: "config" };
+  }
+
+  try {
+    await dataServiceRestFetch(
+      `aid_centers?id=eq.${encodeURIComponent(centerId)}`,
+      {
+        method: "DELETE",
+        prefer: "return=minimal",
+        token: accessToken,
+      },
+    );
+
+    return { status: "deleted" };
   } catch (error) {
     console.error(error);
 
