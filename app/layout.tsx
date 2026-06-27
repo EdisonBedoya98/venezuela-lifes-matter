@@ -14,10 +14,26 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://ayudavenezuela.co";
+
 export const metadata: Metadata = {
-  title: "Venezuela Lives Matter | Ayuda en Medellin",
+  metadataBase: new URL(siteUrl),
+  title: "Ayuda a Venezuela | Venezuela Lives Matter",
   description:
-    "Mapa mobile-first de centros de ayuda humanitaria verificados para venezolanos en Medellin.",
+    "Mapa mobile-first de centros verificados para apoyar ayuda a Venezuela con ubicaciones, horarios y contactos publicos.",
+  openGraph: {
+    description:
+      "Encuentra y comparte centros verificados para apoyar ayuda a Venezuela.",
+    siteName: "Venezuela Lives Matter",
+    title: "Ayuda a Venezuela | Venezuela Lives Matter",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    description:
+      "Encuentra y comparte centros verificados para apoyar ayuda a Venezuela.",
+    title: "Ayuda a Venezuela | Venezuela Lives Matter",
+  },
 };
 
 export default function RootLayout({
