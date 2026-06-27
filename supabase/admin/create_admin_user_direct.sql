@@ -1,43 +1,22 @@
--- Direct Auth admin creation for command-line use with psql.
+-- Direct Auth admin creation.
 --
 -- IMPORTANT:
 -- This touches Supabase Auth internal tables. Use it for initial bootstrap only.
 -- For normal production flows, prefer the Supabase Auth Admin API.
 --
 -- Usage:
--- psql "$SUPABASE_DB_URL" \
---   -v admin_email='admin@venezuela-lives-matter.org' \
---   -v admin_password='ChangeThisPassword123!' \
---   -v admin_full_name='Venezuela Lives Matter Admin' \
---   -f supabase/admin/create_admin_user_direct.sql
-
-\if :{?admin_email}
-\else
-\set admin_email 'admin@venezuela-lives-matter.org'
-\endif
-
-\if :{?admin_password}
-\else
-\set admin_password 'ChangeThisPassword123!'
-\endif
-
-\if :{?admin_full_name}
-\else
-\set admin_full_name 'Venezuela Lives Matter Admin'
-\endif
+-- 1. Edit admin_email, admin_password and admin_full_name inside the DO block.
+-- 2. Run this SQL in Supabase SQL Editor or with:
+--    psql "$SUPABASE_DB_URL" -f supabase/admin/create_admin_user_direct.sql
 
 create schema if not exists extensions;
 create extension if not exists pgcrypto with schema extensions;
 
-select set_config('vlm.admin_email', :'admin_email', false);
-select set_config('vlm.admin_password', :'admin_password', false);
-select set_config('vlm.admin_full_name', :'admin_full_name', false);
-
 do $$
 declare
-  admin_email text := current_setting('vlm.admin_email');
-  admin_password text := current_setting('vlm.admin_password');
-  admin_full_name text := current_setting('vlm.admin_full_name');
+  admin_email text := 'admin@venezuela-lives-matter.org';
+  admin_password text := 'ChangeThisPassword123!';
+  admin_full_name text := 'Venezuela Lives Matter Admin';
   target_user_id uuid;
 begin
   if admin_email is null or length(trim(admin_email)) = 0 then
