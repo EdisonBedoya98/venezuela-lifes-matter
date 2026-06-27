@@ -73,6 +73,8 @@ const categoryIcons: Record<string, typeof Soup> = {
 
 const formatNumber = new Intl.NumberFormat("es-CO");
 const SHARE_PIN_IMAGE_URL = "/pin-velezuela.webp";
+const SHARE_CONTEXT_LABEL = "Ayuda a Venezuela";
+const SHARE_CONTEXT_DESCRIPTION = "Centro verificado de ayuda a Venezuela.";
 const COLOMBIA_MAP = {
   center: {
     lat: 4.5709,
@@ -240,7 +242,7 @@ async function generateInstagramImage(
   context.font = "900 72px Arial";
   drawWrappedText(
     context,
-    "Centro de ayuda",
+    SHARE_CONTEXT_LABEL,
     96,
     226,
     710,
@@ -254,7 +256,7 @@ async function generateInstagramImage(
 
   context.fillStyle = "#ef6f61";
   context.font = "900 34px Arial";
-  context.fillText(center.neighborhood.toUpperCase(), 136, 510);
+  context.fillText("CENTRO VERIFICADO", 136, 510);
 
   context.fillStyle = "#17324d";
   context.font = "900 78px Arial";
@@ -324,7 +326,7 @@ async function generateInstagramImage(
   context.font = "900 34px Arial";
   context.fillText("Venezuela Lives Matter", 96, 1788);
   context.font = "800 28px Arial";
-  context.fillText("Mapa de ayuda humanitaria en Colombia", 96, 1836);
+  context.fillText("Centros verificados de ayuda a Venezuela", 96, 1836);
 
   return canvas.toDataURL("image/png");
 }
@@ -535,7 +537,7 @@ export function AidMapExperience({
               Centros por ciudad
             </div>
             <h1 className="mt-5 max-w-xl text-5xl font-black leading-[0.96] text-[#17324d]">
-              Ayuda humanitaria venezolana, ubicada y verificable.
+              Ayuda a Venezuela, ubicada y verificable.
             </h1>
             <p className="mt-4 max-w-lg text-base leading-7 text-[#49656f]">
               Un mapa operativo para encontrar apoyo, reportar nuevos puntos y
@@ -719,7 +721,6 @@ export function AidMapExperience({
         <CenterShareModal
           center={shareCenter}
           categoryById={categoryById}
-          cityName={cityById.get(shareCenter.cityId)?.name ?? "Colombia"}
           onClose={closeShareModal}
         />
       ) : null}
@@ -1414,12 +1415,10 @@ function EmptyCenterPanel({ hasAnyCenters }: { hasAnyCenters: boolean }) {
 function CenterShareModal({
   center,
   categoryById,
-  cityName,
   onClose,
 }: {
   center: AidCenter;
   categoryById: Map<AidCategoryId, AidCategory>;
-  cityName: string;
   onClose: () => void;
 }) {
   const [copied, setCopied] = useState(false);
@@ -1495,11 +1494,16 @@ function CenterShareModal({
       imageUrl,
       `${center.id}-historia-instagram.png`,
     );
-    const shareData: ShareData = {
+    const fileShareData: ShareData = {
       files: [storyFile],
     };
+    const shareData: ShareData = {
+      files: [storyFile],
+      text: SHARE_CONTEXT_DESCRIPTION,
+      title: `${SHARE_CONTEXT_LABEL} | ${center.name}`,
+    };
 
-    if (navigator.share && navigator.canShare?.(shareData)) {
+    if (navigator.share && navigator.canShare?.(fileShareData)) {
       try {
         await navigator.share(shareData);
         setStoryStatus("Historia enviada al menu de compartir. Elige Instagram e Historia.");
@@ -1534,10 +1538,11 @@ function CenterShareModal({
                 {center.name}
               </h2>
               <p className="mt-2 text-sm font-bold leading-6 text-[#49656f]">
-                {center.neighborhood}, {cityName}
+                {SHARE_CONTEXT_DESCRIPTION}
               </p>
               <p className="mt-3 text-sm leading-6 text-[#49656f]">
-                Generamos una historia 9:16. En el menu de compartir elige
+                Generamos una historia 9:16 para compartir ayuda a Venezuela.
+                En el menu de compartir elige
                 Instagram y luego Historia; si no aparece, descargala y subela
                 manualmente.
               </p>
@@ -1601,7 +1606,7 @@ function CenterShareModal({
           {imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              alt={`Imagen para compartir ${center.name}`}
+              alt={`Imagen de ayuda a Venezuela para compartir ${center.name}`}
               className="h-auto max-h-[58dvh] max-w-full rounded-[8px] border border-white/15 object-contain shadow-2xl"
               src={imageUrl}
             />
