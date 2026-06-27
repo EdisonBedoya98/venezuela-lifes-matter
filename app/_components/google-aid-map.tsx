@@ -249,12 +249,6 @@ export function GoogleAidMap({
           dominio y que Maps JavaScript API este habilitada.
         </div>
       ) : null}
-      {!googleMapsMapId && googleMapsApiKey ? (
-        <div className="absolute bottom-[250px] left-4 right-4 z-10 rounded-[8px] border border-[#17324d]/10 bg-[#fffbf2]/95 p-3 text-xs font-bold text-[#49656f] shadow-sm lg:bottom-5 lg:left-5 lg:right-auto lg:max-w-xs">
-          Para pines personalizados modernos agrega{" "}
-          <span className="text-[#17324d]">NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID</span>.
-        </div>
-      ) : null}
     </>
   );
 }

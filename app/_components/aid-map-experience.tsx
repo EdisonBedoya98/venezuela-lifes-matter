@@ -3,6 +3,7 @@
 import {
   Bus,
   Bell,
+  ChevronDown,
   CheckCircle2,
   ClipboardCheck,
   X,
@@ -61,9 +62,10 @@ export function AidMapExperience({
   impact,
 }: AidMapExperienceProps) {
   const [activeFilter, setActiveFilter] = useState<CategoryFilter>("all");
+  const [isCenterPanelExpanded, setIsCenterPanelExpanded] = useState(false);
   const [isUpdatesModalOpen, setIsUpdatesModalOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [selectedCenterId, setSelectedCenterId] = useState(centers[0]?.id ?? "");
+  const [selectedCenterId, setSelectedCenterId] = useState<string>();
 
   const categoryById = useMemo(
     () => new Map(categories.map((category) => [category.id, category])),
@@ -98,12 +100,13 @@ export function AidMapExperience({
     });
   }, [activeFilter, categoryById, centers, query]);
 
-  const selectedCenter =
-    filteredCenters.find((center) => center.id === selectedCenterId) ??
-    filteredCenters[0];
+  const selectedCenter = selectedCenterId
+    ? filteredCenters.find((center) => center.id === selectedCenterId)
+    : undefined;
 
   const selectCenter = useCallback((centerId: string) => {
     setSelectedCenterId(centerId);
+    setIsCenterPanelExpanded(false);
   }, []);
 
   const visibleCenterIds = useMemo(
@@ -117,9 +120,8 @@ export function AidMapExperience({
       filter === "all" ? true : center.categories.includes(filter),
     );
 
-    if (firstMatch) {
-      setSelectedCenterId(firstMatch.id);
-    }
+    setSelectedCenterId(firstMatch?.id);
+    setIsCenterPanelExpanded(false);
   };
 
   const openUpdatesModal = () => setIsUpdatesModalOpen(true);
@@ -251,11 +253,15 @@ export function AidMapExperience({
               <SelectedCenterPanel
                 center={selectedCenter}
                 categoryById={categoryById}
+                expanded={isCenterPanelExpanded}
+                onToggleExpanded={() =>
+                  setIsCenterPanelExpanded((expanded) => !expanded)
+                }
                 onOpenUpdates={openUpdatesModal}
               />
-            ) : (
+            ) : filteredCenters.length === 0 ? (
               <EmptyCenterPanel />
-            )}
+            ) : null}
           </div>
         </section>
       </div>
@@ -379,103 +385,102 @@ function CenterListItem({
 function SelectedCenterPanel({
   center,
   categoryById,
+  expanded,
+  onToggleExpanded,
   onOpenUpdates,
 }: {
   center: AidCenter;
   categoryById: Map<AidCategoryId, AidCategory>;
+  expanded: boolean;
+  onToggleExpanded: () => void;
   onOpenUpdates: () => void;
 }) {
+  const primaryCategory = categoryById.get(center.categories[0]);
+
   return (
-    <aside className="absolute bottom-0 left-0 right-0 z-20 max-h-[64dvh] overflow-y-auto rounded-t-[24px] border-t border-white/70 bg-[#fffbf2]/95 p-3 shadow-[0_-18px_70px_rgba(23,50,77,0.18)] backdrop-blur sm:p-4 lg:left-auto lg:right-5 lg:top-auto lg:max-h-none lg:w-[390px] lg:rounded-[12px] lg:border">
-      <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-[#17324d]/20 lg:hidden" />
+    <aside
+      className={`absolute bottom-3 left-3 right-3 z-20 overflow-hidden rounded-[16px] border border-white/75 bg-[#fffbf2]/96 p-3 shadow-[0_18px_58px_rgba(23,50,77,0.18)] backdrop-blur transition-[max-height] duration-200 sm:p-4 lg:bottom-5 lg:left-auto lg:right-5 lg:max-h-[calc(100dvh-2.5rem)] lg:w-[380px] lg:overflow-y-auto ${
+        expanded ? "max-h-[56dvh] overflow-y-auto" : "max-h-[245px]"
+      }`}
+    >
+      <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-[#17324d]/20 lg:hidden" />
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-black uppercase tracking-normal text-[#ef6f61]">
-            {center.neighborhood}
-          </p>
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="rounded-full bg-[#ef6f61]/12 px-2 py-1 text-[11px] font-black uppercase tracking-normal text-[#ef6f61]">
+              {center.neighborhood}
+            </span>
+            {primaryCategory ? (
+              <span
+                className="rounded-full px-2 py-1 text-[11px] font-black text-[#17324d]"
+                style={{ background: primaryCategory.surface }}
+              >
+                {primaryCategory.shortLabel}
+              </span>
+            ) : null}
+          </div>
           <h2 className="mt-1 text-xl font-black leading-tight text-[#17324d]">
             {center.name}
           </h2>
         </div>
-        <div className="grid size-11 shrink-0 place-items-center rounded-[8px] bg-[#dff4dd] text-[#17324d]">
-          <CheckCircle2 aria-hidden="true" size={22} />
-        </div>
+        <button
+          aria-expanded={expanded}
+          aria-label={expanded ? "Ocultar detalles" : "Ver detalles"}
+          className="grid size-10 shrink-0 place-items-center rounded-[8px] border border-[#17324d]/10 bg-white text-[#17324d]"
+          onClick={onToggleExpanded}
+          type="button"
+        >
+          <ChevronDown
+            aria-hidden="true"
+            className={`transition-transform ${expanded ? "rotate-180" : ""}`}
+            size={19}
+          />
+        </button>
       </div>
 
-      <p className="mt-3 text-sm leading-6 text-[#49656f]">
-        {center.description}
-      </p>
-
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {center.categories.map((categoryId) => {
-          const category = categoryById.get(categoryId);
-
-          return (
-            <span
-              className="rounded-full px-2.5 py-1 text-xs font-black text-[#17324d]"
-              key={categoryId}
-              style={{ background: category?.surface }}
-            >
-              {category?.label}
-            </span>
-          );
-        })}
+      <div className="mt-3 grid gap-1.5 text-xs font-bold text-[#49656f]">
+        <p className="flex min-w-0 items-center gap-2">
+          <MapPin aria-hidden="true" className="shrink-0 text-[#24a7a1]" size={15} />
+          <span className="truncate">{center.address}</span>
+        </p>
+        <p className="flex min-w-0 items-center gap-2">
+          <CheckCircle2
+            aria-hidden="true"
+            className="shrink-0 text-[#5cb85c]"
+            size={15}
+          />
+          <span className="truncate">{center.hours}</span>
+        </p>
       </div>
 
-      <dl className="mt-4 grid gap-3 text-sm">
-        <div>
-          <dt className="font-black text-[#17324d]">Direccion</dt>
-          <dd className="mt-1 text-[#49656f]">{center.address}</dd>
-        </div>
-        <div>
-          <dt className="font-black text-[#17324d]">Horario</dt>
-          <dd className="mt-1 text-[#49656f]">{center.hours}</dd>
-        </div>
-        <div>
-          <dt className="font-black text-[#17324d]">Requisitos</dt>
-          <dd className="mt-1 text-[#49656f]">{center.requirements}</dd>
-        </div>
-        <div>
-          <dt className="font-black text-[#17324d]">Contacto publico</dt>
-          <dd className="mt-1 text-[#49656f]">{center.publicContact}</dd>
-        </div>
-        <div>
-          <dt className="font-black text-[#17324d]">Estado</dt>
-          <dd className="mt-1 text-[#49656f]">{center.verifiedAt}</dd>
-        </div>
-      </dl>
-
-      <div className="mt-4 grid grid-cols-3 gap-2">
+      <div className="mt-3 grid grid-cols-3 gap-2">
         <ImpactMiniStat label="Visitas" value={center.impact.visits} />
         <ImpactMiniStat label="Kg ayuda" value={center.impact.suppliesKg} />
         <ImpactMiniStat label="Familias" value={center.impact.families} />
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-2">
+      <div className="mt-3 grid grid-cols-3 gap-2">
         <button
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#24a7a1] px-3 text-sm font-black text-white transition hover:-translate-y-0.5"
+          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[8px] bg-[#24a7a1] px-2 text-xs font-black text-white transition hover:-translate-y-0.5"
           onClick={onOpenUpdates}
           type="button"
         >
-          <Bell aria-hidden="true" size={17} />
+          <Bell aria-hidden="true" size={15} />
           Al tanto
         </button>
         <a
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#17324d] px-3 text-sm font-black text-white transition hover:-translate-y-0.5"
+          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[8px] bg-[#17324d] px-2 text-xs font-black text-white transition hover:-translate-y-0.5"
           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
             center.address,
           )}`}
           rel="noreferrer"
           target="_blank"
         >
-          <Navigation aria-hidden="true" size={17} />
+          <Navigation aria-hidden="true" size={15} />
           Ruta
         </a>
-      </div>
-
-      <div className="mt-2 grid grid-cols-1 gap-2">
         <a
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] border border-[#17324d]/15 bg-white px-3 text-sm font-black text-[#17324d] transition hover:-translate-y-0.5"
+          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[8px] border border-[#17324d]/15 bg-white px-2 text-xs font-black text-[#17324d] transition hover:-translate-y-0.5"
           href={
             center.publicContact.includes("@")
               ? `mailto:${center.publicContact}`
@@ -483,12 +488,61 @@ function SelectedCenterPanel({
           }
         >
           {center.publicContact.includes("@") ? (
-            <Mail aria-hidden="true" size={17} />
+            <Mail aria-hidden="true" size={15} />
           ) : (
-            <Phone aria-hidden="true" size={17} />
+            <Phone aria-hidden="true" size={15} />
           )}
           Contacto
         </a>
+      </div>
+
+      <div
+        className={`border-t border-[#17324d]/10 pt-4 ${
+          expanded ? "mt-4 grid gap-4" : "hidden"
+        }`}
+      >
+        <p className="text-sm leading-6 text-[#49656f]">
+          {center.description}
+        </p>
+
+        <div className="flex flex-wrap gap-1.5">
+          {center.categories.map((categoryId) => {
+            const category = categoryById.get(categoryId);
+
+            return (
+              <span
+                className="rounded-full px-2.5 py-1 text-xs font-black text-[#17324d]"
+                key={categoryId}
+                style={{ background: category?.surface }}
+              >
+                {category?.label}
+              </span>
+            );
+          })}
+        </div>
+
+        <dl className="grid gap-3 text-sm">
+          <div>
+            <dt className="font-black text-[#17324d]">Direccion</dt>
+            <dd className="mt-1 text-[#49656f]">{center.address}</dd>
+          </div>
+          <div>
+            <dt className="font-black text-[#17324d]">Horario</dt>
+            <dd className="mt-1 text-[#49656f]">{center.hours}</dd>
+          </div>
+          <div>
+            <dt className="font-black text-[#17324d]">Requisitos</dt>
+            <dd className="mt-1 text-[#49656f]">{center.requirements}</dd>
+          </div>
+          <div>
+            <dt className="font-black text-[#17324d]">Contacto publico</dt>
+            <dd className="mt-1 text-[#49656f]">{center.publicContact}</dd>
+          </div>
+          <div>
+            <dt className="font-black text-[#17324d]">Estado</dt>
+            <dd className="mt-1 text-[#49656f]">{center.verifiedAt}</dd>
+          </div>
+        </dl>
       </div>
     </aside>
   );
@@ -509,8 +563,8 @@ function ImpactMiniStat({ label, value }: { label: string; value: number }) {
 
 function EmptyCenterPanel() {
   return (
-    <aside className="absolute bottom-0 left-0 right-0 z-20 max-h-[42dvh] overflow-y-auto rounded-t-[24px] border-t border-white/70 bg-[#fffbf2]/95 p-3 shadow-[0_-18px_70px_rgba(23,50,77,0.18)] backdrop-blur sm:p-4 lg:left-auto lg:right-5 lg:top-auto lg:max-h-none lg:w-[390px] lg:rounded-[12px] lg:border">
-      <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-[#17324d]/20 lg:hidden" />
+    <aside className="absolute bottom-3 left-3 right-3 z-20 rounded-[16px] border border-white/75 bg-[#fffbf2]/96 p-3 shadow-[0_18px_58px_rgba(23,50,77,0.18)] backdrop-blur sm:p-4 lg:bottom-5 lg:left-auto lg:right-5 lg:w-[360px]">
+      <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-[#17324d]/20 lg:hidden" />
       <p className="text-xs font-black uppercase tracking-normal text-[#ef6f61]">
         Sin resultados
       </p>
