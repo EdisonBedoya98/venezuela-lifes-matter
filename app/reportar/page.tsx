@@ -67,6 +67,10 @@ export default async function ReportPage({
               <Field label="Ciudad" name="city" required />
               <Field label="Departamento" name="department" required />
               <Field label="Barrio o comuna" name="neighborhood" required />
+              <TextAreaField
+                label="Detalles de ubicacion"
+                name="locationDetails"
+              />
               <SelectField label="Tipo de ayuda principal" name="category" required>
                 <option value="">Seleccionar</option>
                 <option value="food">Recoleccion o entrega de comida</option>
@@ -78,7 +82,19 @@ export default async function ReportPage({
                 <option value="donations">Donaciones</option>
                 <option value="volunteers">Voluntariado</option>
               </SelectField>
-              <Field label="Horario de atencion" name="hours" required />
+              <Field label="Dias de atencion" name="hours" required />
+              <Field
+                label="Hora de inicio"
+                name="openingTime"
+                required
+                type="time"
+              />
+              <Field
+                label="Hora de cierre"
+                name="closingTime"
+                required
+                type="time"
+              />
               <Field label="Contacto publico autorizado" name="publicContact" />
               <TextAreaField
                 label="Descripcion del servicio"
