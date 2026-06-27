@@ -9,6 +9,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { RequirementBadge } from "@/app/_components/form-primitives";
 
 type GeocodeResult = {
   confidence: "exact" | "good" | "review";
@@ -326,8 +327,9 @@ export function LocationVerifier() {
             <p className="text-xs font-black uppercase text-[#ef6f61]">
               Ubicacion del pin
             </p>
-            <h3 className="mt-1 break-words text-xl font-black text-[#17324d]">
-              Validar coordenadas exactas
+            <h3 className="mt-1 flex flex-wrap items-center gap-2 break-words text-xl font-black text-[#17324d]">
+              <span>Validar coordenadas exactas</span>
+              <RequirementBadge required />
             </h3>
             <p className="mt-1 break-words text-sm font-semibold leading-6 text-[#49656f]">
               {message}

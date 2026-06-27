@@ -5,6 +5,7 @@ import {
   colombiaDepartments,
   neighborhoodOptionsByCity,
 } from "@/app/_data/colombia-locations";
+import { FieldLabel } from "@/app/_components/form-primitives";
 
 const OTHER_VALUE = "__other";
 
@@ -34,8 +35,9 @@ export function LocationFields() {
   return (
     <>
       <label className="grid min-w-0 gap-2 text-sm font-black">
-        Departamento
+        <FieldLabel label="Departamento" required />
         <select
+          aria-required={true}
           className={fieldClassName()}
           data-location-source="department"
           onChange={(event) => {
@@ -59,8 +61,9 @@ export function LocationFields() {
       <input name="department" type="hidden" value={department} />
 
       <label className="grid min-w-0 gap-2 text-sm font-black">
-        Ciudad o municipio
+        <FieldLabel label="Ciudad o municipio" required />
         <select
+          aria-required={true}
           className={fieldClassName()}
           data-location-source="city"
           disabled={!department}
@@ -87,8 +90,9 @@ export function LocationFields() {
 
       {city === OTHER_VALUE ? (
         <label className="grid min-w-0 gap-2 text-sm font-black">
-          Especifica ciudad o municipio
+          <FieldLabel label="Especifica ciudad o municipio" required />
           <input
+            aria-required={true}
             className={fieldClassName()}
             data-location-source="city"
             onChange={(event) => setCustomCity(event.target.value)}
@@ -102,7 +106,7 @@ export function LocationFields() {
 
       {selectedCity && neighborhoodOptions.length === 0 ? null : (
         <label className="grid min-w-0 gap-2 text-sm font-black">
-          Barrio o comuna
+          <FieldLabel label="Barrio o comuna" />
           <select
             className={fieldClassName()}
             data-location-source="neighborhood"
@@ -111,7 +115,6 @@ export function LocationFields() {
               setNeighborhood(event.target.value);
               setCustomNeighborhood("");
             }}
-            required
             value={neighborhood}
           >
             <option value="">
@@ -130,13 +133,12 @@ export function LocationFields() {
       {neighborhood === OTHER_VALUE ||
       (Boolean(selectedCity) && neighborhoodOptions.length === 0) ? (
         <label className="grid min-w-0 gap-2 text-sm font-black">
-          Especifica barrio o comuna
+          <FieldLabel label="Especifica barrio o comuna" />
           <input
             className={fieldClassName()}
             data-location-source="neighborhood"
             disabled={!selectedCity}
             onChange={(event) => setCustomNeighborhood(event.target.value)}
-            required
             type="text"
             value={customNeighborhood}
           />
