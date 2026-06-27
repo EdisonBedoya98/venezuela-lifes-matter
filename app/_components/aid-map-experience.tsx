@@ -1334,7 +1334,7 @@ const SelectedCenterDetails = forwardRef<
 ) {
   return (
     <section
-      className="mx-4 mt-3 max-w-[calc(100%-2rem)] rounded-[12px] border border-[#17324d]/10 bg-white p-4 shadow-sm lg:hidden"
+      className="mx-4 mb-4 mt-3 max-w-[calc(100%-2rem)] rounded-[12px] border border-[#17324d]/10 bg-white p-4 shadow-sm lg:hidden"
       id="selected-center-mobile-details"
       ref={ref}
     >
