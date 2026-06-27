@@ -868,9 +868,11 @@ function CenterListItem({
 }
 
 function getCenterRouteHref(center: AidCenter) {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    `${center.name}, ${center.address}`,
-  )}`;
+  const destination = `${center.coordinates.lat},${center.coordinates.lng}`;
+
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+    destination,
+  )}&travelmode=driving`;
 }
 
 function getContactHref(publicContact: string) {
