@@ -274,7 +274,7 @@ export function GoogleAidMap({
     <>
       <div className="absolute inset-0 bg-[#d7f8f2]" ref={mapElementRef} />
       {loadState === "error" ? (
-        <div className="absolute inset-x-4 top-20 z-10 rounded-[8px] border border-[#ef6f61]/30 bg-[#fffbf2] p-3 text-sm font-bold text-[#17324d] shadow-sm">
+        <div className="absolute inset-x-4 top-32 z-10 rounded-[8px] border border-[#ef6f61]/30 bg-[#fffbf2] p-3 text-sm font-bold text-[#17324d] shadow-sm sm:top-20">
           No pudimos cargar Google Maps. Revisa la API key, restricciones de
           dominio y que Maps JavaScript API este habilitada.
         </div>
@@ -293,8 +293,8 @@ function FallbackMap({
   return (
     <div className="absolute inset-0 overflow-hidden bg-[#d7f8f2]">
       <div className="google-map-placeholder" />
-      <div className="absolute inset-x-4 top-20 z-10 rounded-[8px] border border-[#17324d]/10 bg-[#fffbf2]/95 p-3 text-sm font-bold text-[#17324d] shadow-sm lg:max-w-sm">
-        Agrega <span className="text-[#ef6f61]">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</span>{" "}
+      <div className="absolute inset-x-4 top-32 z-10 rounded-[8px] border border-[#17324d]/10 bg-[#fffbf2]/95 p-3 text-sm font-bold text-[#17324d] shadow-sm sm:top-20 lg:max-w-sm">
+        Agrega <span className="break-all text-[#ef6f61]">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</span>{" "}
         para cargar Google Maps real.
       </div>
       {centers.map((center) => {

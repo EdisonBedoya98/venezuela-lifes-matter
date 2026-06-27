@@ -57,29 +57,29 @@ export default async function ReportPage({
   const statusMessage = getStatusMessage(estado);
 
   return (
-    <main className="min-h-dvh bg-[#fff8e8] px-4 py-5 text-[#17324d] sm:px-6 lg:px-10">
-      <div className="mx-auto max-w-4xl">
+    <main className="min-h-dvh overflow-x-clip bg-[#fff8e8] px-4 py-5 text-[#17324d] sm:px-6 lg:px-10">
+      <div className="mx-auto min-w-0 max-w-4xl">
         <Link
-          className="inline-flex min-h-11 items-center gap-2 rounded-[8px] border border-[#17324d]/10 bg-white px-3 text-sm font-black text-[#17324d] shadow-sm"
+          className="inline-flex min-h-11 max-w-full items-center gap-2 rounded-[8px] border border-[#17324d]/10 bg-white px-3 text-sm font-black text-[#17324d] shadow-sm"
           href="/"
         >
           <ArrowLeft aria-hidden="true" size={17} />
           Mapa
         </Link>
 
-        <section className="mt-5 rounded-[8px] border border-[#17324d]/10 bg-white p-4 shadow-[0_20px_70px_rgba(23,50,77,0.08)] sm:p-6">
-          <div className="flex items-start gap-3">
+        <section className="mt-5 min-w-0 overflow-x-clip rounded-[8px] border border-[#17324d]/10 bg-white p-4 shadow-[0_20px_70px_rgba(23,50,77,0.08)] sm:p-6">
+          <div className="flex min-w-0 items-start gap-3">
             <div className="grid size-12 shrink-0 place-items-center rounded-[8px] bg-[#f7c948] text-[#17324d]">
               <ClipboardCheck aria-hidden="true" size={24} />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-black uppercase text-[#ef6f61]">
                 Postulacion de centro
               </p>
-              <h1 className="mt-1 text-3xl font-black leading-tight">
+              <h1 className="mt-1 break-words text-3xl font-black leading-tight">
                 Postular un centro de recoleccion o ayuda
               </h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#49656f]">
+              <p className="mt-2 max-w-2xl break-words text-sm leading-6 text-[#49656f]">
                 Este formulario es para organizaciones, voluntarios o aliados
                 que quieren aparecer en el mapa. El equipo revisa la informacion
                 antes de publicar el centro.
@@ -95,7 +95,7 @@ export default async function ReportPage({
             </div>
           ) : null}
 
-          <form action={submitReport} className="mt-6 grid gap-5">
+          <form action={submitReport} className="mt-6 grid min-w-0 gap-5">
             <FormSection title="Datos del centro">
               <Field label="Nombre del centro" name="centerName" required />
               <LocationFields />
@@ -159,15 +159,15 @@ export default async function ReportPage({
               <Field label="Organizacion, si aplica" name="organization" />
             </FormSection>
 
-            <div className="rounded-[8px] border border-[#17324d]/10 bg-[#fffbf2] p-4">
-              <div className="flex gap-3">
+            <div className="min-w-0 rounded-[8px] border border-[#17324d]/10 bg-[#fffbf2] p-4">
+              <div className="flex min-w-0 gap-3">
                 <LockKeyhole
                   aria-hidden="true"
                   className="mt-0.5 shrink-0 text-[#24a7a1]"
                   size={20}
                 />
-                <div className="grid gap-3 text-sm leading-6 text-[#49656f]">
-                  <label className="flex gap-3 font-semibold">
+                <div className="grid min-w-0 gap-3 text-sm leading-6 text-[#49656f]">
+                  <label className="flex min-w-0 gap-3 font-semibold">
                     <input
                       className="mt-1 size-4 shrink-0"
                       name="dataConsent"
@@ -177,7 +177,7 @@ export default async function ReportPage({
                     Autorizo el tratamiento de mis datos personales para
                     verificar este reporte.
                   </label>
-                  <label className="flex gap-3 font-semibold">
+                  <label className="flex min-w-0 gap-3 font-semibold">
                     <input
                       className="mt-1 size-4 shrink-0"
                       name="emailConsent"
@@ -230,14 +230,14 @@ function getStatusMessage(status?: string) {
 
 function SubmissionSuccessModal() {
   return (
-    <div className="fixed inset-0 z-50 grid place-items-end bg-[#17324d]/45 px-3 py-3 backdrop-blur-sm sm:place-items-center">
+    <div className="fixed inset-0 z-50 grid place-items-end overflow-x-hidden bg-[#17324d]/45 px-3 py-3 backdrop-blur-sm sm:place-items-center">
       <section
         aria-labelledby="submission-success-title"
         aria-modal="true"
-        className="w-full max-w-lg rounded-[12px] border border-white/70 bg-[#fffbf2] p-4 text-[#17324d] shadow-[0_24px_90px_rgba(23,50,77,0.28)] sm:p-5"
+        className="w-full max-w-[calc(100vw-1.5rem)] rounded-[12px] border border-white/70 bg-[#fffbf2] p-4 text-[#17324d] shadow-[0_24px_90px_rgba(23,50,77,0.28)] sm:max-w-lg sm:p-5"
         role="dialog"
       >
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="grid size-12 shrink-0 place-items-center rounded-[8px] bg-[#dff4dd] text-[#17324d]">
             <CheckCircle2 aria-hidden="true" size={25} />
           </div>
@@ -254,26 +254,26 @@ function SubmissionSuccessModal() {
           Verificacion enviada
         </p>
         <h2
-          className="mt-1 text-3xl font-black leading-tight"
+          className="mt-1 break-words text-3xl font-black leading-tight"
           id="submission-success-title"
         >
           Centro enviado satisfactoriamente
         </h2>
-        <p className="mt-3 text-sm font-bold leading-6 text-[#49656f]">
+        <p className="mt-3 break-words text-sm font-bold leading-6 text-[#49656f]">
           Recibimos la informacion y el pin del centro. El equipo revisara los
           datos y, si todo esta correcto, lo publicara en el mapa.
         </p>
 
-        <div className="mt-5 grid gap-2 sm:grid-cols-2">
+        <div className="mt-5 grid min-w-0 gap-2 sm:grid-cols-2">
           <Link
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[8px] bg-[#17324d] px-4 text-sm font-black text-white transition hover:-translate-y-0.5"
+            className="inline-flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-[8px] bg-[#17324d] px-4 text-center text-sm font-black text-white transition hover:-translate-y-0.5"
             href="/"
           >
             <MapPin aria-hidden="true" size={17} />
             Volver al mapa
           </Link>
           <Link
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[8px] border border-[#17324d]/15 bg-white px-4 text-sm font-black text-[#17324d] transition hover:-translate-y-0.5"
+            className="inline-flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-[8px] border border-[#17324d]/15 bg-white px-4 text-center text-sm font-black text-[#17324d] transition hover:-translate-y-0.5"
             href="/reportar"
           >
             <PlusCircle aria-hidden="true" size={17} />

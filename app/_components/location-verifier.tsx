@@ -276,7 +276,7 @@ export function LocationVerifier() {
 
   return (
     <div
-      className={`grid gap-4 rounded-[8px] border p-4 md:col-span-2 ${statusTone}`}
+      className={`grid min-w-0 max-w-full gap-4 overflow-x-clip rounded-[8px] border p-4 md:col-span-2 ${statusTone}`}
       ref={rootRef}
     >
       <input
@@ -317,7 +317,7 @@ export function LocationVerifier() {
       <input name="geoPlaceId" type="hidden" value={result?.placeId ?? ""} />
       <input name="geoQueryUsed" type="hidden" value={result?.queryUsed ?? ""} />
 
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 gap-3">
           <div className="grid size-11 shrink-0 place-items-center rounded-[8px] bg-white text-[#17324d] shadow-sm">
             <StatusIcon aria-hidden="true" size={22} />
@@ -326,17 +326,17 @@ export function LocationVerifier() {
             <p className="text-xs font-black uppercase text-[#ef6f61]">
               Ubicacion del pin
             </p>
-            <h3 className="mt-1 text-xl font-black text-[#17324d]">
+            <h3 className="mt-1 break-words text-xl font-black text-[#17324d]">
               Validar coordenadas exactas
             </h3>
-            <p className="mt-1 text-sm font-semibold leading-6 text-[#49656f]">
+            <p className="mt-1 break-words text-sm font-semibold leading-6 text-[#49656f]">
               {message}
             </p>
           </div>
         </div>
 
         <button
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#17324d] px-4 text-sm font-black text-white transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70"
+          className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-[8px] bg-[#17324d] px-4 text-center text-sm font-black text-white transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70"
           disabled={isLoading}
           onClick={verifyLocation}
           type="button"

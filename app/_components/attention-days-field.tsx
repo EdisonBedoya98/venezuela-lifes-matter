@@ -35,11 +35,11 @@ export function AttentionDaysField() {
   };
 
   return (
-    <div className="grid gap-2 text-sm font-black md:col-span-2">
-      <label className="grid gap-2">
+    <div className="grid min-w-0 gap-2 text-sm font-black md:col-span-2">
+      <label className="grid min-w-0 gap-2">
         Dias de atencion
         <select
-          className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-[#fffbf2] px-3 font-semibold outline-none focus:border-[#24a7a1]"
+          className="min-h-12 min-w-0 max-w-full rounded-[8px] border border-[#17324d]/15 bg-[#fffbf2] px-3 font-semibold outline-none focus:border-[#24a7a1]"
           disabled={availableDays.length === 0}
           onChange={(event) => addDay(event.target.value)}
           required={selectedDays.length === 0}
@@ -59,10 +59,10 @@ export function AttentionDaysField() {
       </label>
 
       {selectedDays.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex min-w-0 flex-wrap gap-2">
           {selectedDays.map((day) => (
             <span
-              className="inline-flex min-h-9 items-center gap-2 rounded-full bg-[#d7f8f2] px-3 text-xs font-black text-[#17324d]"
+              className="inline-flex min-h-9 max-w-full items-center gap-2 rounded-full bg-[#d7f8f2] px-3 text-xs font-black text-[#17324d]"
               key={day}
             >
               {day}

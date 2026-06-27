@@ -9,7 +9,7 @@ import {
 const OTHER_VALUE = "__other";
 
 function fieldClassName() {
-  return "min-h-12 rounded-[8px] border border-[#17324d]/15 bg-[#fffbf2] px-3 font-semibold outline-none focus:border-[#24a7a1]";
+  return "min-h-12 min-w-0 max-w-full rounded-[8px] border border-[#17324d]/15 bg-[#fffbf2] px-3 font-semibold outline-none focus:border-[#24a7a1]";
 }
 
 export function LocationFields() {
@@ -33,7 +33,7 @@ export function LocationFields() {
 
   return (
     <>
-      <label className="grid gap-2 text-sm font-black">
+      <label className="grid min-w-0 gap-2 text-sm font-black">
         Departamento
         <select
           className={fieldClassName()}
@@ -58,7 +58,7 @@ export function LocationFields() {
       </label>
       <input name="department" type="hidden" value={department} />
 
-      <label className="grid gap-2 text-sm font-black">
+      <label className="grid min-w-0 gap-2 text-sm font-black">
         Ciudad o municipio
         <select
           className={fieldClassName()}
@@ -86,7 +86,7 @@ export function LocationFields() {
       </label>
 
       {city === OTHER_VALUE ? (
-        <label className="grid gap-2 text-sm font-black">
+        <label className="grid min-w-0 gap-2 text-sm font-black">
           Especifica ciudad o municipio
           <input
             className={fieldClassName()}
@@ -101,7 +101,7 @@ export function LocationFields() {
       <input name="city" type="hidden" value={selectedCity} />
 
       {selectedCity && neighborhoodOptions.length === 0 ? null : (
-        <label className="grid gap-2 text-sm font-black">
+        <label className="grid min-w-0 gap-2 text-sm font-black">
           Barrio o comuna
           <select
             className={fieldClassName()}
@@ -129,7 +129,7 @@ export function LocationFields() {
 
       {neighborhood === OTHER_VALUE ||
       (Boolean(selectedCity) && neighborhoodOptions.length === 0) ? (
-        <label className="grid gap-2 text-sm font-black">
+        <label className="grid min-w-0 gap-2 text-sm font-black">
           Especifica barrio o comuna
           <input
             className={fieldClassName()}
