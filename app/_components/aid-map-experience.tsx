@@ -16,7 +16,6 @@ import {
   Mail,
   MapPin,
   Navigation,
-  Phone,
   Search,
   Share2,
   ShieldCheck,
@@ -875,9 +874,9 @@ function getContactHref(publicContact: string) {
     return `mailto:${publicContact}`;
   }
 
-  const phone = publicContact.replace(/[^\d+]/g, "");
+  const phone = getWhatsAppPhone(publicContact);
 
-  return phone ? `tel:${phone}` : undefined;
+  return phone ? `https://wa.me/${phone}` : undefined;
 }
 
 function getWhatsAppPhone(publicContact: string) {
@@ -908,6 +907,34 @@ function getVolunteerWhatsAppHref(center: AidCenter, cityName: string) {
   return `https://wa.me/${phone}?text=${encodeURIComponent(
     getVolunteerWhatsAppMessage(center, cityName),
   )}`;
+}
+
+function WhatsAppIcon({ size = 15 }: { size?: number }) {
+  return (
+    <svg
+      aria-hidden="true"
+      fill="none"
+      height={size}
+      viewBox="0 0 24 24"
+      width={size}
+    >
+      <path
+        d="M5.1 19.1 6 15.9a7.7 7.7 0 1 1 2.2 2.2l-3.1 1Z"
+        fill="currentColor"
+        opacity="0.18"
+      />
+      <path
+        d="M5.1 19.1 6 15.9a7.7 7.7 0 1 1 2.2 2.2l-3.1 1Z"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+      <path
+        d="M9.1 8.7c.2-.4.4-.5.7-.5h.5c.2 0 .4.1.5.4l.7 1.5c.1.3.1.5-.1.7l-.4.5c.5.9 1.2 1.7 2.3 2.2l.6-.5c.2-.2.4-.2.7-.1l1.5.7c.3.1.4.3.4.6v.5c0 .4-.2.7-.6.9-.5.3-1.3.4-2.3.1-2.2-.7-4.6-3.1-5.3-5.3-.3-.9-.1-1.7.2-2.2Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
 }
 
 function CenterBadges({
@@ -1006,7 +1033,7 @@ function CenterActions({
   const contactIcon = center.publicContact.includes("@") ? (
     <Mail aria-hidden="true" size={15} />
   ) : (
-    <Phone aria-hidden="true" size={15} />
+    <WhatsAppIcon size={15} />
   );
   const actionClass =
     "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[8px] px-2 text-xs font-black transition hover:-translate-y-0.5";
@@ -1652,7 +1679,7 @@ function VolunteerApplicationModal({
             rel="noreferrer"
             target="_blank"
           >
-            <Phone aria-hidden="true" size={18} />
+            <WhatsAppIcon size={18} />
             Abrir WhatsApp del centro
           </a>
         ) : (

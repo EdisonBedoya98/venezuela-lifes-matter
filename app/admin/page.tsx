@@ -87,7 +87,12 @@ async function loginAdmin(formData: FormData) {
     );
 
     if (!response.ok) {
-      nextPath = "/admin?status=invalid";
+      const errorText = await response.text();
+
+      nextPath =
+        response.status >= 500 || errorText.includes("Database error")
+          ? "/admin?status=auth-db"
+          : "/admin?status=invalid";
     } else {
       const session = (await response.json()) as SupabaseTokenResponse;
 
@@ -419,6 +424,10 @@ function getStatusMessage(status?: string) {
 
   if (status === "error") {
     return "No pudimos validar el acceso. Intenta de nuevo.";
+  }
+
+  if (status === "auth-db") {
+    return "Supabase Auth devolvio un error de base de datos. Si creaste este usuario por SQL directo, elimina ese registro y recrealo con el Admin API.";
   }
 
   return undefined;
