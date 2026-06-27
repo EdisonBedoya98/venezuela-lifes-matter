@@ -25,11 +25,18 @@ import {
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { GoogleAidMap } from "@/app/_components/google-aid-map";
-import type { AidCategory, AidCategoryId, AidCenter } from "@/app/_data/aid-centers";
+import type {
+  AidCategory,
+  AidCategoryId,
+  AidCenter,
+  AidCity,
+  AidCityId,
+} from "@/app/_data/aid-centers";
 
 type AidMapExperienceProps = {
   categories: AidCategory[];
   centers: AidCenter[];
+  cities: AidCity[];
   impact: {
     activeCenters: number;
     monthlyVisits: number;
@@ -56,11 +63,24 @@ const categoryIcons = {
 
 const formatNumber = new Intl.NumberFormat("es-CO");
 
+function getImpactFromCenters(centers: AidCenter[]) {
+  return {
+    activeCenters: centers.length,
+    families: centers.reduce((total, center) => total + center.impact.families, 0),
+    monthlyVisits: centers.reduce((total, center) => total + center.impact.visits, 0),
+    suppliesKg: centers.reduce((total, center) => total + center.impact.suppliesKg, 0),
+  };
+}
+
 export function AidMapExperience({
   categories,
   centers,
+  cities,
   impact,
 }: AidMapExperienceProps) {
+  const [activeCityId, setActiveCityId] = useState<AidCityId>(
+    cities[0]?.id ?? "medellin",
+  );
   const [activeFilter, setActiveFilter] = useState<CategoryFilter>("all");
   const [isCenterPanelExpanded, setIsCenterPanelExpanded] = useState(false);
   const [isUpdatesModalOpen, setIsUpdatesModalOpen] = useState(false);
@@ -72,10 +92,33 @@ export function AidMapExperience({
     [categories],
   );
 
+  const cityById = useMemo(
+    () => new Map(cities.map((city) => [city.id, city])),
+    [cities],
+  );
+  const activeCity = cityById.get(activeCityId) ?? cities[0];
+  const cityCenters = useMemo(
+    () => centers.filter((center) => center.cityId === activeCity?.id),
+    [activeCity?.id, centers],
+  );
+  const cityCenterCounts = useMemo(() => {
+    const counts = new Map<AidCityId, number>();
+
+    centers.forEach((center) => {
+      counts.set(center.cityId, (counts.get(center.cityId) ?? 0) + 1);
+    });
+
+    return counts;
+  }, [centers]);
+  const activeImpact = useMemo(
+    () => getImpactFromCenters(cityCenters),
+    [cityCenters],
+  );
+
   const filteredCenters = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return centers.filter((center) => {
+    return cityCenters.filter((center) => {
       const matchesCategory =
         activeFilter === "all" || center.categories.includes(activeFilter);
 
@@ -91,6 +134,7 @@ export function AidMapExperience({
         center.neighborhood,
         center.address,
         center.description,
+        activeCity?.name ?? "",
         categoryText,
       ]
         .join(" ")
@@ -98,7 +142,7 @@ export function AidMapExperience({
 
       return matchesCategory && haystack.includes(normalizedQuery);
     });
-  }, [activeFilter, categoryById, centers, query]);
+  }, [activeCity?.name, activeFilter, categoryById, cityCenters, query]);
 
   const selectedCenter = selectedCenterId
     ? filteredCenters.find((center) => center.id === selectedCenterId)
@@ -114,9 +158,17 @@ export function AidMapExperience({
     [filteredCenters],
   );
 
+  const selectCity = (cityId: AidCityId) => {
+    setActiveCityId(cityId);
+    setActiveFilter("all");
+    setQuery("");
+    setSelectedCenterId(undefined);
+    setIsCenterPanelExpanded(false);
+  };
+
   const resetFilterIfHidden = (filter: CategoryFilter) => {
     setActiveFilter(filter);
-    const firstMatch = centers.find((center) =>
+    const firstMatch = cityCenters.find((center) =>
       filter === "all" ? true : center.categories.includes(filter),
     );
 
@@ -134,7 +186,7 @@ export function AidMapExperience({
           <header className="hidden lg:block">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#17324d]/10 bg-white px-3 py-2 text-sm font-semibold text-[#35615f] shadow-sm">
               <ShieldCheck aria-hidden="true" size={16} />
-              Centros verificados en Medellin
+              Centros por ciudad
             </div>
             <h1 className="mt-5 max-w-xl text-5xl font-black leading-[0.96] text-[#17324d]">
               Ayuda humanitaria venezolana, ubicada y verificable.
@@ -145,9 +197,16 @@ export function AidMapExperience({
             </p>
           </header>
 
-          <ImpactStrip impact={impact} />
+          <ImpactStrip impact={activeCity ? activeImpact : impact} />
 
           <div className="rounded-[8px] border border-[#17324d]/10 bg-white p-3 shadow-[0_20px_60px_rgba(23,50,77,0.08)]">
+            <CitySelector
+              activeCityId={activeCity?.id}
+              cities={cities}
+              counts={cityCenterCounts}
+              onSelectCity={selectCity}
+            />
+
             <div className="flex items-center gap-2 rounded-[8px] border border-[#17324d]/10 bg-[#f8fbf7] px-3 py-2">
               <Search aria-hidden="true" size={18} className="text-[#617781]" />
               <input
@@ -210,7 +269,9 @@ export function AidMapExperience({
           <div className="relative h-[78dvh] min-h-[620px] overflow-hidden rounded-b-[28px] border-b border-[#17324d]/10 bg-[#c9eee3] shadow-[0_24px_80px_rgba(23,50,77,0.16)] lg:h-full lg:min-h-0 lg:rounded-[12px] lg:border">
             <GoogleAidMap
               categoryById={categoryById}
-              centers={centers}
+              centers={cityCenters}
+              mapCenter={activeCity?.map.center}
+              mapZoom={activeCity?.map.zoom}
               onSelectCenter={selectCenter}
               selectedCenterId={selectedCenter?.id}
               visibleCenterIds={visibleCenterIds}
@@ -221,7 +282,9 @@ export function AidMapExperience({
                 <p className="text-xs font-black uppercase text-[#ef6f61]">
                   Venezuela Lives Matter
                 </p>
-                <p className="text-sm font-black text-[#17324d]">Medellin</p>
+                <p className="text-sm font-black text-[#17324d]">
+                  {activeCity?.name ?? "Colombia"}
+                </p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -294,6 +357,48 @@ function ImpactStrip({
           </p>
         </div>
       ))}
+    </div>
+  );
+}
+
+function CitySelector({
+  activeCityId,
+  cities,
+  counts,
+  onSelectCity,
+}: {
+  activeCityId?: AidCityId;
+  cities: AidCity[];
+  counts: Map<AidCityId, number>;
+  onSelectCity: (cityId: AidCityId) => void;
+}) {
+  return (
+    <div className="mb-3">
+      <p className="mb-2 text-xs font-black uppercase text-[#ef6f61]">
+        Ciudad
+      </p>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {cities.map((city) => {
+          const active = city.id === activeCityId;
+
+          return (
+            <button
+              aria-pressed={active}
+              className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-[8px] border border-[#17324d]/10 bg-[#fffbf2] px-3 text-sm font-black text-[#17324d] shadow-sm transition hover:-translate-y-0.5 data-[active=true]:border-[#24a7a1]/45 data-[active=true]:bg-[#d7f8f2]"
+              data-active={active}
+              key={city.id}
+              onClick={() => onSelectCity(city.id)}
+              type="button"
+            >
+              <MapPin aria-hidden="true" size={16} />
+              <span>{city.name}</span>
+              <span className="rounded-full bg-white px-2 py-0.5 text-[11px] text-[#617781]">
+                {counts.get(city.id) ?? 0}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -7,6 +7,11 @@ import type { AidCategory, AidCategoryId, AidCenter } from "@/app/_data/aid-cent
 type GoogleAidMapProps = {
   categoryById: Map<AidCategoryId, AidCategory>;
   centers: AidCenter[];
+  mapCenter?: {
+    lat: number;
+    lng: number;
+  };
+  mapZoom?: number;
   selectedCenterId?: string;
   visibleCenterIds: Set<string>;
   onSelectCenter: (centerId: string) => void;
@@ -68,6 +73,8 @@ const cleanMapStyles: google.maps.MapTypeStyle[] = [
 export function GoogleAidMap({
   categoryById,
   centers,
+  mapCenter = GOOGLE_MAPS_CENTER,
+  mapZoom = GOOGLE_MAPS_ZOOM,
   onSelectCenter,
   selectedCenterId,
   visibleCenterIds,
@@ -158,9 +165,24 @@ export function GoogleAidMap({
       markersRef.current = [];
 
       const selectedCenter = centers.find((center) => center.id === selectedCenterId);
+      const visibleCenters = centers.filter((center) => visibleCenterIds.has(center.id));
 
       if (selectedCenter) {
         map.panTo(selectedCenter.coordinates);
+        map.setZoom(Math.max(map.getZoom() ?? mapZoom, mapZoom));
+      } else if (visibleCenters.length > 1) {
+        const bounds = new google.maps.LatLngBounds();
+
+        visibleCenters.forEach((center) => {
+          bounds.extend(center.coordinates);
+        });
+        map.fitBounds(bounds, 80);
+      } else if (visibleCenters.length === 1) {
+        map.panTo(visibleCenters[0].coordinates);
+        map.setZoom(mapZoom);
+      } else {
+        map.panTo(mapCenter);
+        map.setZoom(mapZoom);
       }
 
       if (googleMapsMapId) {
@@ -226,7 +248,15 @@ export function GoogleAidMap({
     return () => {
       cancelled = true;
     };
-  }, [centers, loadState, onSelectCenter, selectedCenterId, visibleCenterIds]);
+  }, [
+    centers,
+    loadState,
+    mapCenter,
+    mapZoom,
+    onSelectCenter,
+    selectedCenterId,
+    visibleCenterIds,
+  ]);
 
   if (loadState === "missing-key") {
     return (
