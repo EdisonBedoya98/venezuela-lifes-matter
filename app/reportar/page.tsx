@@ -9,9 +9,28 @@ import {
   TextAreaField,
 } from "@/app/_components/form-primitives";
 import { LocationFields } from "@/app/_components/location-fields";
+import { LocationVerifier } from "@/app/_components/location-verifier";
 
-async function submitReport() {
+async function submitReport(formData: FormData) {
   "use server";
+
+  const latitude = Number(formData.get("geoLatitude"));
+  const longitude = Number(formData.get("geoLongitude"));
+  const formattedAddress = String(formData.get("geoFormattedAddress") ?? "");
+  const placeId = String(formData.get("geoPlaceId") ?? "");
+
+  if (
+    !formattedAddress ||
+    !placeId ||
+    !Number.isFinite(latitude) ||
+    !Number.isFinite(longitude)
+  ) {
+    redirect("/reportar?estado=ubicacion");
+  }
+
+  if (!isInsideColombia(latitude, longitude)) {
+    redirect("/reportar?estado=ubicacion-invalida");
+  }
 
   redirect("/reportar?estado=recibido");
 }
@@ -23,6 +42,7 @@ export default async function ReportPage({
 }) {
   const { estado } = await searchParams;
   const received = estado === "recibido";
+  const statusMessage = getStatusMessage(estado);
 
   return (
     <main className="min-h-dvh bg-[#fff8e8] px-4 py-5 text-[#17324d] sm:px-6 lg:px-10">
@@ -55,10 +75,15 @@ export default async function ReportPage({
             </div>
           </div>
 
-          {received ? (
-            <div className="mt-6 rounded-[8px] border border-[#5cb85c]/30 bg-[#dff4dd] p-4 text-sm font-bold text-[#17324d]">
-              Recibimos el reporte. El equipo admin lo revisara antes de
-              publicarlo en el mapa.
+          {statusMessage ? (
+            <div
+              className={`mt-6 rounded-[8px] border p-4 text-sm font-bold text-[#17324d] ${
+                received
+                  ? "border-[#5cb85c]/30 bg-[#dff4dd]"
+                  : "border-[#ef6f61]/30 bg-[#ffe2dd]"
+              }`}
+            >
+              {statusMessage}
             </div>
           ) : null}
 
@@ -67,10 +92,17 @@ export default async function ReportPage({
               <Field label="Nombre del centro" name="centerName" required />
               <LocationFields />
               <TextAreaField
+                dataLocationSource="locationDetails"
                 label="Detalles de ubicacion"
                 name="locationDetails"
               />
-              <Field label="Direccion" name="address" required />
+              <Field
+                dataLocationSource="address"
+                label="Direccion"
+                name="address"
+                required
+              />
+              <LocationVerifier />
               <SelectField label="Tipo de ayuda principal" name="category" required>
                 <option value="">Seleccionar</option>
                 <option value="food">Recoleccion o entrega de comida</option>
@@ -162,4 +194,24 @@ export default async function ReportPage({
       </div>
     </main>
   );
+}
+
+function isInsideColombia(lat: number, lng: number) {
+  return lat >= -4.5 && lat <= 13.8 && lng >= -82.2 && lng <= -66.8;
+}
+
+function getStatusMessage(status?: string) {
+  if (status === "recibido") {
+    return "Recibimos el reporte con el pin validado. El equipo admin revisara la informacion antes de publicarlo en el mapa.";
+  }
+
+  if (status === "ubicacion") {
+    return "Antes de enviar, valida y fija el pin con Google Maps para que el equipo pueda aprobar una ubicacion exacta.";
+  }
+
+  if (status === "ubicacion-invalida") {
+    return "Las coordenadas no parecen estar dentro de Colombia. Revisa la direccion y vuelve a fijar el pin.";
+  }
+
+  return undefined;
 }

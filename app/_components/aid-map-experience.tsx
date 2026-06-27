@@ -83,15 +83,6 @@ const COLOMBIA_MAP = {
 };
 const CENTER_QUERY_PARAM = "centro";
 
-function getImpactFromCenters(centers: AidCenter[]) {
-  return {
-    activeCenters: centers.length,
-    families: centers.reduce((total, center) => total + center.impact.families, 0),
-    monthlyVisits: centers.reduce((total, center) => total + center.impact.visits, 0),
-    suppliesKg: centers.reduce((total, center) => total + center.impact.suppliesKg, 0),
-  };
-}
-
 function getCenterShareUrl(center: AidCenter) {
   if (typeof window === "undefined") {
     return `/?${CENTER_QUERY_PARAM}=${center.id}`;
@@ -336,7 +327,6 @@ export function AidMapExperience({
   categories,
   centers,
   cities,
-  impact,
 }: AidMapExperienceProps) {
   const [activeCityId, setActiveCityId] = useState<CityFilter>("all");
   const [activeFilter, setActiveFilter] = useState<CategoryFilter>("all");
@@ -376,11 +366,6 @@ export function AidMapExperience({
 
     return counts;
   }, [centers]);
-  const activeImpact = useMemo(
-    () => (activeCityId === "all" ? impact : getImpactFromCenters(cityCenters)),
-    [activeCityId, cityCenters, impact],
-  );
-
   const filteredCenters = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
@@ -537,8 +522,6 @@ export function AidMapExperience({
               mantener datos privados protegidos durante la verificacion.
             </p>
           </header>
-
-          <ImpactStrip impact={activeImpact} />
 
           <div className="rounded-[8px] border border-[#17324d]/10 bg-white p-3 shadow-[0_20px_60px_rgba(23,50,77,0.08)]">
             <CitySelector
@@ -725,37 +708,6 @@ export function AidMapExperience({
         />
       ) : null}
     </main>
-  );
-}
-
-function ImpactStrip({
-  impact,
-}: {
-  impact: AidMapExperienceProps["impact"];
-}) {
-  const items = [
-    ["Centros", impact.activeCenters.toString()],
-    ["Visitas", formatNumber.format(impact.monthlyVisits)],
-    ["Kg ayuda", formatNumber.format(impact.suppliesKg)],
-    ["Familias", formatNumber.format(impact.families)],
-  ];
-
-  return (
-    <div className="grid grid-cols-2 gap-2 pt-4 sm:grid-cols-4 sm:pt-5 lg:mt-2 lg:pt-0">
-      {items.map(([label, value]) => (
-        <div
-          className="rounded-[8px] border border-[#17324d]/10 bg-white p-3 shadow-sm"
-          key={label}
-        >
-          <p className="text-xl font-black leading-none text-[#17324d]">
-            {value}
-          </p>
-          <p className="mt-1 text-xs font-bold uppercase text-[#617781]">
-            {label}
-          </p>
-        </div>
-      ))}
-    </div>
   );
 }
 

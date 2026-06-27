@@ -18,11 +18,13 @@ export function FormSection({
 }
 
 export function Field({
+  dataLocationSource,
   label,
   name,
   required,
   type = "text",
 }: {
+  dataLocationSource?: string;
   label: string;
   name: string;
   required?: boolean;
@@ -33,6 +35,7 @@ export function Field({
       {label}
       <input
         className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-[#fffbf2] px-3 font-semibold outline-none focus:border-[#24a7a1]"
+        data-location-source={dataLocationSource}
         name={name}
         required={required}
         type={type}
@@ -42,10 +45,12 @@ export function Field({
 }
 
 export function TextAreaField({
+  dataLocationSource,
   label,
   name,
   required,
 }: {
+  dataLocationSource?: string;
   label: string;
   name: string;
   required?: boolean;
@@ -55,6 +60,7 @@ export function TextAreaField({
       {label}
       <textarea
         className="min-h-28 rounded-[8px] border border-[#17324d]/15 bg-[#fffbf2] px-3 py-3 font-semibold outline-none focus:border-[#24a7a1]"
+        data-location-source={dataLocationSource}
         name={name}
         required={required}
       />

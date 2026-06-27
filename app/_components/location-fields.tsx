@@ -37,6 +37,7 @@ export function LocationFields() {
         Departamento
         <select
           className={fieldClassName()}
+          data-location-source="department"
           onChange={(event) => {
             setDepartment(event.target.value);
             setCity("");
@@ -61,6 +62,7 @@ export function LocationFields() {
         Ciudad o municipio
         <select
           className={fieldClassName()}
+          data-location-source="city"
           disabled={!department}
           onChange={(event) => {
             setCity(event.target.value);
@@ -88,6 +90,7 @@ export function LocationFields() {
           Especifica ciudad o municipio
           <input
             className={fieldClassName()}
+            data-location-source="city"
             onChange={(event) => setCustomCity(event.target.value)}
             required
             type="text"
@@ -102,6 +105,7 @@ export function LocationFields() {
           Barrio o comuna
           <select
             className={fieldClassName()}
+            data-location-source="neighborhood"
             disabled={!selectedCity}
             onChange={(event) => {
               setNeighborhood(event.target.value);
@@ -129,6 +133,7 @@ export function LocationFields() {
           Especifica barrio o comuna
           <input
             className={fieldClassName()}
+            data-location-source="neighborhood"
             disabled={!selectedCity}
             onChange={(event) => setCustomNeighborhood(event.target.value)}
             required
