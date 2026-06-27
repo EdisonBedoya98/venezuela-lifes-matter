@@ -36,6 +36,10 @@ export type AidCenter = {
     x: number;
     y: number;
   };
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
 };
 
 export const aidCategories: AidCategory[] = [
@@ -119,6 +123,10 @@ export const aidCenters: AidCenter[] = [
       x: 38,
       y: 66,
     },
+    coordinates: {
+      lat: 6.2324,
+      lng: -75.5964,
+    },
   },
   {
     id: "san-javier-salud",
@@ -140,6 +148,10 @@ export const aidCenters: AidCenter[] = [
     position: {
       x: 24,
       y: 49,
+    },
+    coordinates: {
+      lat: 6.2552,
+      lng: -75.6186,
     },
   },
   {
@@ -163,6 +175,10 @@ export const aidCenters: AidCenter[] = [
       x: 55,
       y: 37,
     },
+    coordinates: {
+      lat: 6.2589,
+      lng: -75.5649,
+    },
   },
   {
     id: "red-documental-poblado",
@@ -185,6 +201,10 @@ export const aidCenters: AidCenter[] = [
       x: 67,
       y: 70,
     },
+    coordinates: {
+      lat: 6.2092,
+      lng: -75.5677,
+    },
   },
   {
     id: "bodega-solidaria-caribe",
@@ -206,6 +226,10 @@ export const aidCenters: AidCenter[] = [
     position: {
       x: 48,
       y: 22,
+    },
+    coordinates: {
+      lat: 6.2792,
+      lng: -75.572,
     },
   },
 ];

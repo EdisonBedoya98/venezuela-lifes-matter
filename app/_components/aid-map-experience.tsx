@@ -2,8 +2,10 @@
 
 import {
   Bus,
+  Bell,
   CheckCircle2,
   ClipboardCheck,
+  X,
   FileCheck2,
   Gift,
   HeartHandshake,
@@ -20,7 +22,8 @@ import {
   UsersRound,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { GoogleAidMap } from "@/app/_components/google-aid-map";
 import type { AidCategory, AidCategoryId, AidCenter } from "@/app/_data/aid-centers";
 
 type AidMapExperienceProps = {
@@ -58,6 +61,7 @@ export function AidMapExperience({
   impact,
 }: AidMapExperienceProps) {
   const [activeFilter, setActiveFilter] = useState<CategoryFilter>("all");
+  const [isUpdatesModalOpen, setIsUpdatesModalOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedCenterId, setSelectedCenterId] = useState(centers[0]?.id ?? "");
 
@@ -98,9 +102,14 @@ export function AidMapExperience({
     filteredCenters.find((center) => center.id === selectedCenterId) ??
     filteredCenters[0];
 
-  const selectCenter = (centerId: string) => {
+  const selectCenter = useCallback((centerId: string) => {
     setSelectedCenterId(centerId);
-  };
+  }, []);
+
+  const visibleCenterIds = useMemo(
+    () => new Set(filteredCenters.map((center) => center.id)),
+    [filteredCenters],
+  );
 
   const resetFilterIfHidden = (filter: CategoryFilter) => {
     setActiveFilter(filter);
@@ -112,6 +121,9 @@ export function AidMapExperience({
       setSelectedCenterId(firstMatch.id);
     }
   };
+
+  const openUpdatesModal = () => setIsUpdatesModalOpen(true);
+  const closeUpdatesModal = () => setIsUpdatesModalOpen(false);
 
   return (
     <main className="min-h-dvh bg-[#fff8e8] text-[#17324d]">
@@ -193,8 +205,14 @@ export function AidMapExperience({
         </section>
 
         <section className="order-1 lg:sticky lg:top-0 lg:order-2 lg:h-dvh lg:p-5">
-          <div className="relative h-[64dvh] min-h-[520px] overflow-hidden rounded-b-[28px] border-b border-[#17324d]/10 bg-[#c9eee3] shadow-[0_24px_80px_rgba(23,50,77,0.16)] lg:h-full lg:rounded-[12px] lg:border">
-            <MapArtwork />
+          <div className="relative h-[78dvh] min-h-[620px] overflow-hidden rounded-b-[28px] border-b border-[#17324d]/10 bg-[#c9eee3] shadow-[0_24px_80px_rgba(23,50,77,0.16)] lg:h-full lg:min-h-0 lg:rounded-[12px] lg:border">
+            <GoogleAidMap
+              categoryById={categoryById}
+              centers={centers}
+              onSelectCenter={selectCenter}
+              selectedCenterId={selectedCenter?.id}
+              visibleCenterIds={visibleCenterIds}
+            />
 
             <div className="absolute left-4 right-4 top-4 z-20 flex items-center justify-between gap-3">
               <div className="rounded-[8px] border border-white/70 bg-[#fffbf2]/95 px-3 py-2 shadow-sm backdrop-blur">
@@ -204,8 +222,16 @@ export function AidMapExperience({
                 <p className="text-sm font-black text-[#17324d]">Medellin</p>
               </div>
               <div className="flex gap-2">
+                <button
+                  aria-label="Estar al tanto"
+                  className="grid size-11 place-items-center rounded-[8px] border border-[#17324d]/10 bg-[#24a7a1] text-white shadow-sm transition hover:-translate-y-0.5"
+                  onClick={openUpdatesModal}
+                  type="button"
+                >
+                  <Bell aria-hidden="true" size={20} />
+                </button>
                 <Link
-                  aria-label="Reportar un centro"
+                  aria-label="Postular un centro"
                   className="grid size-11 place-items-center rounded-[8px] border border-[#17324d]/10 bg-[#f7c948] text-[#17324d] shadow-sm transition hover:-translate-y-0.5"
                   href="/reportar"
                 >
@@ -221,41 +247,11 @@ export function AidMapExperience({
               </div>
             </div>
 
-            {centers.map((center) => {
-              const primaryCategory = categoryById.get(center.categories[0]);
-              const Icon = categoryIcons[center.categories[0]];
-              const isSelected = center.id === selectedCenter?.id;
-              const isVisible = filteredCenters.some(
-                (filteredCenter) => filteredCenter.id === center.id,
-              );
-
-              return (
-                <button
-                  key={center.id}
-                  aria-label={`Ver ${center.name}`}
-                  className="aid-map-pin"
-                data-selected={isSelected}
-                  data-muted={!isVisible}
-                  onClick={() => selectCenter(center.id)}
-                  style={{
-                    left: `${center.position.x}%`,
-                    top: `${center.position.y}%`,
-                    "--pin-color": primaryCategory?.accent ?? "#24A7A1",
-                    "--pin-surface": primaryCategory?.surface ?? "#D7F8F2",
-                  } as CSSVariableProperties}
-                  type="button"
-                >
-                  <span className="aid-map-pin__bubble">
-                    <Icon aria-hidden="true" size={18} strokeWidth={2.7} />
-                  </span>
-                </button>
-              );
-            })}
-
             {selectedCenter ? (
               <SelectedCenterPanel
                 center={selectedCenter}
                 categoryById={categoryById}
+                onOpenUpdates={openUpdatesModal}
               />
             ) : (
               <EmptyCenterPanel />
@@ -263,6 +259,11 @@ export function AidMapExperience({
           </div>
         </section>
       </div>
+
+      <UpdatesModal
+        isOpen={isUpdatesModalOpen}
+        onClose={closeUpdatesModal}
+      />
     </main>
   );
 }
@@ -378,12 +379,14 @@ function CenterListItem({
 function SelectedCenterPanel({
   center,
   categoryById,
+  onOpenUpdates,
 }: {
   center: AidCenter;
   categoryById: Map<AidCategoryId, AidCategory>;
+  onOpenUpdates: () => void;
 }) {
   return (
-    <aside className="absolute bottom-0 left-0 right-0 z-20 rounded-t-[24px] border-t border-white/70 bg-[#fffbf2]/95 p-4 shadow-[0_-18px_70px_rgba(23,50,77,0.18)] backdrop-blur lg:left-auto lg:right-5 lg:top-auto lg:w-[390px] lg:rounded-[12px] lg:border">
+    <aside className="absolute bottom-0 left-0 right-0 z-20 max-h-[64dvh] overflow-y-auto rounded-t-[24px] border-t border-white/70 bg-[#fffbf2]/95 p-3 shadow-[0_-18px_70px_rgba(23,50,77,0.18)] backdrop-blur sm:p-4 lg:left-auto lg:right-5 lg:top-auto lg:max-h-none lg:w-[390px] lg:rounded-[12px] lg:border">
       <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-[#17324d]/20 lg:hidden" />
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -399,7 +402,9 @@ function SelectedCenterPanel({
         </div>
       </div>
 
-      <p className="mt-3 text-sm leading-6 text-[#49656f]">{center.description}</p>
+      <p className="mt-3 text-sm leading-6 text-[#49656f]">
+        {center.description}
+      </p>
 
       <div className="mt-3 flex flex-wrap gap-1.5">
         {center.categories.map((categoryId) => {
@@ -419,6 +424,10 @@ function SelectedCenterPanel({
 
       <dl className="mt-4 grid gap-3 text-sm">
         <div>
+          <dt className="font-black text-[#17324d]">Direccion</dt>
+          <dd className="mt-1 text-[#49656f]">{center.address}</dd>
+        </div>
+        <div>
           <dt className="font-black text-[#17324d]">Horario</dt>
           <dd className="mt-1 text-[#49656f]">{center.hours}</dd>
         </div>
@@ -426,9 +435,31 @@ function SelectedCenterPanel({
           <dt className="font-black text-[#17324d]">Requisitos</dt>
           <dd className="mt-1 text-[#49656f]">{center.requirements}</dd>
         </div>
+        <div>
+          <dt className="font-black text-[#17324d]">Contacto publico</dt>
+          <dd className="mt-1 text-[#49656f]">{center.publicContact}</dd>
+        </div>
+        <div>
+          <dt className="font-black text-[#17324d]">Estado</dt>
+          <dd className="mt-1 text-[#49656f]">{center.verifiedAt}</dd>
+        </div>
       </dl>
 
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        <ImpactMiniStat label="Visitas" value={center.impact.visits} />
+        <ImpactMiniStat label="Kg ayuda" value={center.impact.suppliesKg} />
+        <ImpactMiniStat label="Familias" value={center.impact.families} />
+      </div>
+
       <div className="mt-4 grid grid-cols-2 gap-2">
+        <button
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#24a7a1] px-3 text-sm font-black text-white transition hover:-translate-y-0.5"
+          onClick={onOpenUpdates}
+          type="button"
+        >
+          <Bell aria-hidden="true" size={17} />
+          Al tanto
+        </button>
         <a
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#17324d] px-3 text-sm font-black text-white transition hover:-translate-y-0.5"
           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -440,6 +471,9 @@ function SelectedCenterPanel({
           <Navigation aria-hidden="true" size={17} />
           Ruta
         </a>
+      </div>
+
+      <div className="mt-2 grid grid-cols-1 gap-2">
         <a
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] border border-[#17324d]/15 bg-white px-3 text-sm font-black text-[#17324d] transition hover:-translate-y-0.5"
           href={
@@ -460,9 +494,22 @@ function SelectedCenterPanel({
   );
 }
 
+function ImpactMiniStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-[8px] border border-[#17324d]/10 bg-white px-2 py-2">
+      <p className="text-base font-black leading-none text-[#17324d]">
+        {formatNumber.format(value)}
+      </p>
+      <p className="mt-1 text-[10px] font-black uppercase text-[#617781]">
+        {label}
+      </p>
+    </div>
+  );
+}
+
 function EmptyCenterPanel() {
   return (
-    <aside className="absolute bottom-0 left-0 right-0 z-20 rounded-t-[24px] border-t border-white/70 bg-[#fffbf2]/95 p-4 shadow-[0_-18px_70px_rgba(23,50,77,0.18)] backdrop-blur lg:left-auto lg:right-5 lg:top-auto lg:w-[390px] lg:rounded-[12px] lg:border">
+    <aside className="absolute bottom-0 left-0 right-0 z-20 max-h-[42dvh] overflow-y-auto rounded-t-[24px] border-t border-white/70 bg-[#fffbf2]/95 p-3 shadow-[0_-18px_70px_rgba(23,50,77,0.18)] backdrop-blur sm:p-4 lg:left-auto lg:right-5 lg:top-auto lg:max-h-none lg:w-[390px] lg:rounded-[12px] lg:border">
       <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-[#17324d]/20 lg:hidden" />
       <p className="text-xs font-black uppercase tracking-normal text-[#ef6f61]">
         Sin resultados
@@ -485,22 +532,119 @@ function EmptyCenterPanel() {
   );
 }
 
-function MapArtwork() {
+function UpdatesModal({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  const [submitted, setSubmitted] = useState(false);
+
+  if (!isOpen) {
+    return null;
+  }
+
   return (
-    <div aria-hidden="true" className="absolute inset-0 overflow-hidden">
-      <div className="map-sun" />
-      <div className="map-neighborhood map-neighborhood--north">Caribe</div>
-      <div className="map-neighborhood map-neighborhood--west">San Javier</div>
-      <div className="map-neighborhood map-neighborhood--center">Centro</div>
-      <div className="map-neighborhood map-neighborhood--south">Belen</div>
-      <div className="map-neighborhood map-neighborhood--east">Poblado</div>
-      <div className="map-river" />
-      <div className="map-road map-road--one" />
-      <div className="map-road map-road--two" />
-      <div className="map-road map-road--three" />
-      <div className="map-road map-road--four" />
-      <div className="map-grid map-grid--one" />
-      <div className="map-grid map-grid--two" />
+    <div className="fixed inset-0 z-50 grid place-items-end bg-[#17324d]/38 px-3 py-3 backdrop-blur-sm sm:place-items-center">
+      <section
+        aria-labelledby="updates-modal-title"
+        aria-modal="true"
+        className="w-full max-w-lg rounded-[12px] border border-white/70 bg-[#fffbf2] p-4 text-[#17324d] shadow-[0_24px_90px_rgba(23,50,77,0.28)] sm:p-5"
+        role="dialog"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase text-[#ef6f61]">
+              Estar al tanto
+            </p>
+            <h2
+              className="mt-1 text-2xl font-black leading-tight"
+              id="updates-modal-title"
+            >
+              Recibir informacion sobre Venezuela
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[#49656f]">
+              Guarda tu contacto para recibir actualizaciones, reportes y
+              llamados de apoyo relacionados con la situacion de Venezuela.
+            </p>
+          </div>
+          <button
+            aria-label="Cerrar"
+            className="grid size-10 shrink-0 place-items-center rounded-[8px] border border-[#17324d]/10 bg-white text-[#17324d]"
+            onClick={onClose}
+            type="button"
+          >
+            <X aria-hidden="true" size={18} />
+          </button>
+        </div>
+
+        {submitted ? (
+          <div className="mt-5 rounded-[8px] border border-[#5cb85c]/30 bg-[#dff4dd] p-4 text-sm font-bold text-[#17324d]">
+            Listo. Cuando conectemos Supabase, este registro quedara guardado en
+            la tabla de suscripciones.
+          </div>
+        ) : (
+          <form
+            className="mt-5 grid gap-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setSubmitted(true);
+            }}
+          >
+            <label className="grid gap-2 text-sm font-black">
+              Nombre
+              <input
+                className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-white px-3 font-semibold outline-none focus:border-[#24a7a1]"
+                name="fullName"
+                required
+                type="text"
+              />
+            </label>
+            <label className="grid gap-2 text-sm font-black">
+              Correo
+              <input
+                className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-white px-3 font-semibold outline-none focus:border-[#24a7a1]"
+                name="email"
+                required
+                type="email"
+              />
+            </label>
+            <label className="grid gap-2 text-sm font-black">
+              WhatsApp opcional
+              <input
+                className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-white px-3 font-semibold outline-none focus:border-[#24a7a1]"
+                name="phone"
+                type="tel"
+              />
+            </label>
+            <label className="grid gap-2 text-sm font-black">
+              Ciudad
+              <input
+                className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-white px-3 font-semibold outline-none focus:border-[#24a7a1]"
+                name="city"
+                type="text"
+              />
+            </label>
+            <label className="flex gap-3 rounded-[8px] border border-[#17324d]/10 bg-white p-3 text-sm font-semibold leading-6 text-[#49656f]">
+              <input
+                className="mt-1 size-4 shrink-0"
+                name="dataConsent"
+                required
+                type="checkbox"
+              />
+              Autorizo el tratamiento de mis datos para recibir informacion y
+              comunicaciones sobre Venezuela.
+            </label>
+            <button
+              className="inline-flex min-h-12 items-center justify-center rounded-[8px] bg-[#17324d] px-5 text-sm font-black text-white"
+              type="submit"
+            >
+              Guardar contacto
+            </button>
+          </form>
+        )}
+      </section>
     </div>
   );
 }

@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { ArrowLeft, ClipboardCheck, LockKeyhole, Send } from "lucide-react";
 import { redirect } from "next/navigation";
+import {
+  Field,
+  FormSection,
+  SelectField,
+  TextAreaField,
+} from "@/app/_components/form-primitives";
 
 async function submitReport() {
   "use server";
@@ -34,11 +40,16 @@ export default async function ReportPage({
             </div>
             <div>
               <p className="text-xs font-black uppercase text-[#ef6f61]">
-                Reporte publico
+                Postulacion de centro
               </p>
               <h1 className="mt-1 text-3xl font-black leading-tight">
-                Registrar un centro para verificacion
+                Postular un centro de recoleccion o ayuda
               </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#49656f]">
+                Este formulario es para organizaciones, voluntarios o aliados
+                que quieren aparecer en el mapa. El equipo revisa la informacion
+                antes de publicar el centro.
+              </p>
             </div>
           </div>
 
@@ -54,32 +65,28 @@ export default async function ReportPage({
               <Field label="Nombre del centro" name="centerName" required />
               <Field label="Direccion" name="address" required />
               <Field label="Barrio o comuna" name="neighborhood" required />
-              <label className="grid gap-2 text-sm font-black">
-                Tipo de ayuda
-                <select
-                  className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-[#fffbf2] px-3 font-semibold outline-none focus:border-[#24a7a1]"
-                  name="category"
-                  required
-                >
-                  <option value="">Seleccionar</option>
-                  <option value="food">Alimentacion</option>
-                  <option value="health">Salud</option>
-                  <option value="shelter">Refugio</option>
-                  <option value="documents">Documentos</option>
-                  <option value="supplies">Ropa e insumos</option>
-                  <option value="transport">Transporte</option>
-                  <option value="donations">Donaciones</option>
-                  <option value="volunteers">Voluntariado</option>
-                </select>
-              </label>
-              <label className="grid gap-2 text-sm font-black md:col-span-2">
-                Descripcion
-                <textarea
-                  className="min-h-28 rounded-[8px] border border-[#17324d]/15 bg-[#fffbf2] px-3 py-3 font-semibold outline-none focus:border-[#24a7a1]"
-                  name="description"
-                  required
-                />
-              </label>
+              <SelectField label="Tipo de ayuda principal" name="category" required>
+                <option value="">Seleccionar</option>
+                <option value="food">Recoleccion o entrega de comida</option>
+                <option value="health">Salud</option>
+                <option value="shelter">Refugio</option>
+                <option value="documents">Documentos</option>
+                <option value="supplies">Ropa e insumos</option>
+                <option value="transport">Transporte</option>
+                <option value="donations">Donaciones</option>
+                <option value="volunteers">Voluntariado</option>
+              </SelectField>
+              <Field label="Horario de atencion" name="hours" required />
+              <Field label="Contacto publico autorizado" name="publicContact" />
+              <TextAreaField
+                label="Descripcion del servicio"
+                name="description"
+                required
+              />
+              <TextAreaField
+                label="Requisitos para recibir o entregar ayuda"
+                name="requirements"
+              />
             </FormSection>
 
             <FormSection title="Datos privados de verificacion">
@@ -136,46 +143,5 @@ export default async function ReportPage({
         </section>
       </div>
     </main>
-  );
-}
-
-function FormSection({
-  children,
-  title,
-}: {
-  children: React.ReactNode;
-  title: string;
-}) {
-  return (
-    <fieldset className="grid gap-4 rounded-[8px] border border-[#17324d]/10 p-4 md:grid-cols-2">
-      <legend className="px-2 text-sm font-black uppercase text-[#ef6f61]">
-        {title}
-      </legend>
-      {children}
-    </fieldset>
-  );
-}
-
-function Field({
-  label,
-  name,
-  required,
-  type = "text",
-}: {
-  label: string;
-  name: string;
-  required?: boolean;
-  type?: string;
-}) {
-  return (
-    <label className="grid gap-2 text-sm font-black">
-      {label}
-      <input
-        className="min-h-12 rounded-[8px] border border-[#17324d]/15 bg-[#fffbf2] px-3 font-semibold outline-none focus:border-[#24a7a1]"
-        name={name}
-        required={required}
-        type={type}
-      />
-    </label>
   );
 }
