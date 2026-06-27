@@ -1,11 +1,11 @@
 -- Cleanup for admin users created directly in auth.users.
 --
--- Use this in Supabase SQL Editor if Auth login returns:
+-- Use this in the project SQL editor if Auth login returns:
 -- "Database error querying schema" or "Database error finding users".
 --
 -- 1. Set admin_email to the broken admin email.
 -- 2. Run this SQL.
--- 3. Recreate the admin with scripts/create-supabase-admin.mjs.
+-- 3. Recreate the admin with scripts/create-admin-user.mjs.
 
 do $$
 declare

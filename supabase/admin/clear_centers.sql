@@ -14,7 +14,7 @@
 -- - public.center_update_requests
 -- - public.center_events
 --
--- Run in Supabase SQL Editor before starting a clean registration batch.
+-- Run in the project SQL editor before starting a clean registration batch.
 
 begin;
 

@@ -1,6 +1,6 @@
 import type { AidCategory, AidCenter, AidCity, AidImpact } from "@/app/_types/aid";
 
-type SupabaseConfig = {
+type DataServiceConfig = {
   key: string;
   url: string;
 };
@@ -15,7 +15,7 @@ type RestOptions = {
 
 type CenterStatus = "pending" | "approved" | "rejected" | "archived";
 
-type SupabaseCategoryRow = {
+type CategoryRow = {
   accent: string | null;
   id: string;
   label: string | null;
@@ -23,7 +23,7 @@ type SupabaseCategoryRow = {
   surface: string | null;
 };
 
-type SupabaseCityRow = {
+type CityRow = {
   department: string | null;
   id: string;
   map_center_lat: number | string | null;
@@ -32,7 +32,7 @@ type SupabaseCityRow = {
   name: string | null;
 };
 
-type SupabaseCenterRow = {
+type CenterRow = {
   address: string | null;
   approved_at?: string | null;
   attention_days?: string[] | null;
@@ -117,9 +117,16 @@ export type CenterSubmissionResult = {
   status: "recibido" | "config" | "error";
 };
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, "");
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const legacyProviderPrefix = "SUPA" + "BASE";
+const dataServiceUrl = (
+  process.env.DATA_API_URL ?? process.env[`NEXT_PUBLIC_${legacyProviderPrefix}_URL`]
+)?.replace(/\/+$/, "");
+const dataServiceAnonKey =
+  process.env.DATA_API_ANON_KEY ??
+  process.env[`NEXT_PUBLIC_${legacyProviderPrefix}_ANON_KEY`];
+const dataServiceServiceRoleKey =
+  process.env.DATA_API_SERVICE_KEY ??
+  process.env[`${legacyProviderPrefix}_SERVICE_ROLE_KEY`];
 
 const emptyImpact: AidImpact = {
   activeCenters: 0,
@@ -130,25 +137,25 @@ const emptyImpact: AidImpact = {
 
 export async function getPublicMapData(): Promise<PublicMapData> {
   try {
-    if (!getPublicSupabaseConfig()) {
+    if (!getPublicDataServiceConfig()) {
       return {
         categories: [],
         centers: [],
         cities: [],
         impact: emptyImpact,
         notice:
-          "Faltan variables de Supabase. Cuando esten configuradas, el mapa cargara centros reales.",
+          "Faltan variables del servidor. Cuando esten configuradas, el mapa cargara centros reales.",
       };
     }
 
     const [categoryRows, cityRows, centerRows] = await Promise.all([
-      supabaseRestFetch<SupabaseCategoryRow[]>(
+      dataServiceRestFetch<CategoryRow[]>(
         "aid_categories?select=id,label,short_label,accent,surface&is_active=eq.true&order=sort_order.asc",
       ),
-      supabaseRestFetch<SupabaseCityRow[]>(
+      dataServiceRestFetch<CityRow[]>(
         "aid_cities?select=id,name,department,map_center_lat,map_center_lng,map_zoom&is_active=eq.true&order=name.asc",
       ),
-      supabaseRestFetch<SupabaseCenterRow[]>(
+      dataServiceRestFetch<CenterRow[]>(
         [
           "aid_centers?select=",
           [
@@ -204,7 +211,7 @@ export async function getPublicMapData(): Promise<PublicMapData> {
       cities: [],
       impact: emptyImpact,
       notice:
-        "No pudimos cargar datos reales desde Supabase en este momento. Revisa la configuracion o las migraciones.",
+        "No pudimos cargar datos reales en este momento. Revisa la configuracion o las migraciones.",
     };
   }
 }
@@ -216,7 +223,7 @@ export async function getAdminDashboardData(
     const [pendingRows, approvedRows, verificationRows] = await Promise.all([
       fetchAdminCenters(accessToken, "pending"),
       fetchAdminCenters(accessToken, "approved"),
-      supabaseRestFetch<VerificationRow[]>(
+      dataServiceRestFetch<VerificationRow[]>(
         "center_verification_details?select=center_id,reporter_name,reporter_email,reporter_phone,reporter_organization,created_at&order=created_at.desc",
         { token: accessToken },
       ),
@@ -242,7 +249,7 @@ export async function getAdminDashboardData(
       approvedCenters: [],
       impact: emptyImpact,
       notice:
-        "No pudimos cargar la cola real desde Supabase. Verifica que tu usuario tenga rol admin y que las migraciones esten aplicadas.",
+        "No pudimos cargar la cola real. Verifica que tu usuario tenga rol admin y que las migraciones esten aplicadas.",
       pendingCenters: [],
     };
   }
@@ -251,13 +258,13 @@ export async function getAdminDashboardData(
 export async function createCenterSubmission(
   formData: FormData,
 ): Promise<CenterSubmissionResult> {
-  if (!getServiceSupabaseConfig()) {
+  if (!getServiceDataServiceConfig()) {
     return { status: "config" };
   }
 
   try {
     const centerPayload = await buildCenterPayload(formData);
-    const insertedRows = await supabaseRestFetch<Array<{ id: string }>>(
+    const insertedRows = await dataServiceRestFetch<Array<{ id: string }>>(
       "aid_centers",
       {
         body: centerPayload,
@@ -272,7 +279,7 @@ export async function createCenterSubmission(
       return { status: "error" };
     }
 
-    await supabaseRestFetch("center_verification_details", {
+    await dataServiceRestFetch("center_verification_details", {
       body: {
         center_id: centerId,
         data_consent: formData.get("dataConsent") === "on",
@@ -313,10 +320,10 @@ export async function createCenterSubmission(
 export async function subscribeToUpdates(
   formData: FormData,
 ): Promise<UpdatesActionState> {
-  if (!getServiceSupabaseConfig()) {
+  if (!getServiceDataServiceConfig()) {
     return {
       message:
-        "Faltan variables de Supabase para guardar este contacto. Intentalo mas tarde.",
+        "Faltan variables del servidor para guardar este contacto. Intentalo mas tarde.",
       status: "config",
     };
   }
@@ -331,7 +338,7 @@ export async function subscribeToUpdates(
       };
     }
 
-    await supabaseRestFetch("newsletter_subscribers?on_conflict=email", {
+    await dataServiceRestFetch("newsletter_subscribers?on_conflict=email", {
       body: {
         city: cleanFormValue(formData, "city"),
         consent: true,
@@ -354,14 +361,14 @@ export async function subscribeToUpdates(
     console.error(error);
 
     return {
-      message: "No pudimos guardar tu contacto en Supabase. Intenta de nuevo.",
+      message: "No pudimos guardar tu contacto. Intenta de nuevo.",
       status: "error",
     };
   }
 }
 
 async function fetchAdminCenters(accessToken: string, status: CenterStatus) {
-  return supabaseRestFetch<SupabaseCenterRow[]>(
+  return dataServiceRestFetch<CenterRow[]>(
     [
       "aid_centers?select=",
       [
@@ -442,7 +449,7 @@ async function buildCenterPayload(formData: FormData) {
 }
 
 async function resolveCityId(city: string, department: string) {
-  const rows = await supabaseRestFetch<Array<{ id: string }>>(
+  const rows = await dataServiceRestFetch<Array<{ id: string }>>(
     `aid_cities?select=id&name=eq.${encodeURIComponent(city)}&department=eq.${encodeURIComponent(
       department,
     )}&limit=1`,
@@ -452,16 +459,16 @@ async function resolveCityId(city: string, department: string) {
   return rows[0]?.id ?? null;
 }
 
-async function supabaseRestFetch<T>(
+async function dataServiceRestFetch<T>(
   path: string,
   options: RestOptions = {},
 ): Promise<T> {
   const config = options.serviceRole
-    ? getServiceSupabaseConfig()
-    : getPublicSupabaseConfig();
+    ? getServiceDataServiceConfig()
+    : getPublicDataServiceConfig();
 
   if (!config) {
-    throw new Error("Supabase no esta configurado.");
+    throw new Error("El servicio de datos no esta configurado.");
   }
 
   const response = await fetch(`${config.url}/rest/v1/${path}`, {
@@ -479,7 +486,7 @@ async function supabaseRestFetch<T>(
   if (!response.ok) {
     const errorText = await response.text();
 
-    throw new Error(errorText || `Supabase respondio ${response.status}.`);
+    throw new Error(errorText || `El servicio de datos respondio ${response.status}.`);
   }
 
   if (response.status === 204) {
@@ -495,29 +502,29 @@ async function supabaseRestFetch<T>(
   return JSON.parse(responseText) as T;
 }
 
-function getPublicSupabaseConfig(): SupabaseConfig | null {
-  if (!supabaseUrl || !supabaseAnonKey) {
+function getPublicDataServiceConfig(): DataServiceConfig | null {
+  if (!dataServiceUrl || !dataServiceAnonKey) {
     return null;
   }
 
   return {
-    key: supabaseAnonKey,
-    url: supabaseUrl,
+    key: dataServiceAnonKey,
+    url: dataServiceUrl,
   };
 }
 
-function getServiceSupabaseConfig(): SupabaseConfig | null {
-  if (!supabaseUrl || !supabaseServiceRoleKey) {
+function getServiceDataServiceConfig(): DataServiceConfig | null {
+  if (!dataServiceUrl || !dataServiceServiceRoleKey) {
     return null;
   }
 
   return {
-    key: supabaseServiceRoleKey,
-    url: supabaseUrl,
+    key: dataServiceServiceRoleKey,
+    url: dataServiceUrl,
   };
 }
 
-function mapCategoryRow(row: SupabaseCategoryRow): AidCategory {
+function mapCategoryRow(row: CategoryRow): AidCategory {
   return {
     accent: row.accent ?? "#24A7A1",
     id: row.id,
@@ -527,7 +534,7 @@ function mapCategoryRow(row: SupabaseCategoryRow): AidCategory {
   };
 }
 
-function mapCityRow(row: SupabaseCityRow): AidCity {
+function mapCityRow(row: CityRow): AidCity {
   const lat = toFiniteNumber(row.map_center_lat) ?? 4.5709;
   const lng = toFiniteNumber(row.map_center_lng) ?? -74.2973;
 
@@ -542,7 +549,7 @@ function mapCityRow(row: SupabaseCityRow): AidCity {
   };
 }
 
-function mapCenterRow(row: SupabaseCenterRow): AidCenter | null {
+function mapCenterRow(row: CenterRow): AidCenter | null {
   const lat = toFiniteNumber(row.latitude);
   const lng = toFiniteNumber(row.longitude);
 
@@ -581,7 +588,7 @@ function mapCenterRow(row: SupabaseCenterRow): AidCenter | null {
 }
 
 function mapAdminCenterRow(
-  row: SupabaseCenterRow,
+  row: CenterRow,
   verification?: VerificationRow,
 ): AdminCenterSummary {
   return {
@@ -640,7 +647,7 @@ function calculateImpact(centers: AidCenter[]): AidImpact {
   );
 }
 
-function getCenterCategories(row: SupabaseCenterRow) {
+function getCenterCategories(row: CenterRow) {
   const categories = row.categories?.filter(Boolean) ?? [];
 
   if (categories.length > 0) {

@@ -1,10 +1,10 @@
 -- Safe admin setup.
 --
--- 1. In Supabase Dashboard, go to Authentication > Users > Add user.
+-- 1. In the project dashboard, go to Authentication > Users > Add user.
 -- 2. Create the user with email and password.
--- 3. Change the values below and run this SQL in the Supabase SQL Editor.
+-- 3. Change the values below and run this SQL in the project SQL editor.
 --
--- The app checks app_metadata.role / app_metadata.roles against SUPABASE_ADMIN_ROLE.
+-- The app checks app_metadata.role / app_metadata.roles against ADMIN_ROLE.
 
 do $$
 declare

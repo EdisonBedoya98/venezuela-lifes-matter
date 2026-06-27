@@ -1,6 +1,6 @@
 -- Initial catalog for real submissions.
 -- Centers are intentionally not seeded. Public map and admin queues should
--- only show records created through Supabase forms or admin workflows.
+-- only show records created through real forms or admin workflows.
 
 insert into public.aid_categories (id, label, short_label, accent, surface, sort_order)
 values

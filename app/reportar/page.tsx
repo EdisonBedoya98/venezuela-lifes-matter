@@ -10,7 +10,7 @@ import {
 } from "@/app/_components/form-primitives";
 import { LocationFields } from "@/app/_components/location-fields";
 import { LocationVerifier } from "@/app/_components/location-verifier";
-import { createCenterSubmission } from "@/app/_lib/supabase-data";
+import { createCenterSubmission } from "@/app/_lib/data-service";
 
 async function submitReport(formData: FormData) {
   "use server";
@@ -205,15 +205,15 @@ function isInsideColombia(lat: number, lng: number) {
 
 function getStatusMessage(status?: string) {
   if (status === "recibido") {
-    return "Recibimos el reporte con el pin validado y quedo guardado en Supabase como pendiente. El equipo admin revisara la informacion antes de publicarlo en el mapa.";
+    return "Recibimos el reporte con el pin validado y quedo guardado como pendiente. El equipo admin revisara la informacion antes de publicarlo en el mapa.";
   }
 
   if (status === "config") {
-    return "Faltan variables de Supabase para guardar el reporte. Revisa NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY.";
+    return "Faltan variables del servidor para guardar el reporte. Revisa la configuracion privada del proyecto.";
   }
 
   if (status === "error") {
-    return "No pudimos guardar el reporte en Supabase. Revisa las migraciones y vuelve a intentar.";
+    return "No pudimos guardar el reporte. Revisa la configuracion interna y vuelve a intentar.";
   }
 
   if (status === "ubicacion") {

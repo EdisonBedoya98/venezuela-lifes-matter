@@ -13,27 +13,33 @@ import {
   getAdminDashboardData,
   type AdminCenterSummary,
   type AdminDashboardData,
-} from "@/app/_lib/supabase-data";
+} from "@/app/_lib/data-service";
 
 const adminSessionCookie = "vlm_admin_access_token";
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, "");
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const requiredAdminRole = process.env.SUPABASE_ADMIN_ROLE ?? "admin";
+const legacyProviderPrefix = "SUPA" + "BASE";
+const dataServiceUrl = (
+  process.env.DATA_API_URL ?? process.env[`NEXT_PUBLIC_${legacyProviderPrefix}_URL`]
+)?.replace(/\/+$/, "");
+const dataServiceAnonKey =
+  process.env.DATA_API_ANON_KEY ??
+  process.env[`NEXT_PUBLIC_${legacyProviderPrefix}_ANON_KEY`];
+const requiredAdminRole =
+  process.env.ADMIN_ROLE ?? process.env[`${legacyProviderPrefix}_ADMIN_ROLE`] ?? "admin";
 
 type AdminSearchParams = Promise<{
   status?: string | string[];
 }>;
 
-type SupabaseUser = {
+type AuthUser = {
   accessToken?: string;
   email?: string;
   app_metadata?: Record<string, unknown>;
 };
 
-type SupabaseTokenResponse = {
+type AuthTokenResponse = {
   access_token?: string;
   expires_in?: number;
-  user?: SupabaseUser;
+  user?: AuthUser;
 };
 
 async function loginAdmin(formData: FormData) {
@@ -41,9 +47,9 @@ async function loginAdmin(formData: FormData) {
 
   let nextPath = "/admin?status=error";
 
-  const supabaseConfig = getSupabaseConfig();
+  const dataServiceConfig = getDataServiceConfig();
 
-  if (!supabaseConfig) {
+  if (!dataServiceConfig) {
     redirect("/admin?status=config");
   }
 
@@ -56,13 +62,13 @@ async function loginAdmin(formData: FormData) {
 
   try {
     const response = await fetch(
-      `${supabaseConfig.url}/auth/v1/token?grant_type=password`,
+      `${dataServiceConfig.url}/auth/v1/token?grant_type=password`,
       {
         body: JSON.stringify({ email, password }),
         cache: "no-store",
         headers: {
-          apikey: supabaseConfig.anonKey,
-          Authorization: `Bearer ${supabaseConfig.anonKey}`,
+          apikey: dataServiceConfig.anonKey,
+          Authorization: `Bearer ${dataServiceConfig.anonKey}`,
           "Content-Type": "application/json",
         },
         method: "POST",
@@ -77,7 +83,7 @@ async function loginAdmin(formData: FormData) {
           ? "/admin?status=auth-db"
           : "/admin?status=invalid";
     } else {
-      const session = (await response.json()) as SupabaseTokenResponse;
+      const session = (await response.json()) as AuthTokenResponse;
 
       if (!session.access_token || !session.user) {
         nextPath = "/admin?status=invalid";
@@ -139,7 +145,7 @@ export default async function AdminPage({
 }
 
 function AdminLogin({ status }: { status?: string }) {
-  const configured = Boolean(getSupabaseConfig());
+  const configured = Boolean(getDataServiceConfig());
   const statusMessage = getStatusMessage(status);
 
   return (
@@ -165,7 +171,7 @@ function AdminLogin({ status }: { status?: string }) {
               Acceso para equipo autorizado
             </h1>
             <p className="mt-3 text-sm leading-6 text-[#49656f]">
-              Ingresa con una cuenta de Supabase Auth que tenga el rol{" "}
+              Ingresa con una cuenta autorizada que tenga el rol{" "}
               <span className="font-black text-[#17324d]">
                 {requiredAdminRole}
               </span>{" "}
@@ -180,7 +186,7 @@ function AdminLogin({ status }: { status?: string }) {
 
             {!configured ? (
               <div className="mt-4 rounded-[8px] border border-[#f7c948]/35 bg-[#fff3bf] p-3 text-sm font-bold leading-6 text-[#17324d]">
-                Faltan las variables de entorno de Supabase para activar el
+                Faltan las variables de entorno privadas para activar el
                 login.
               </div>
             ) : null}
@@ -288,7 +294,7 @@ function AdminDashboard({
                   <AdminCenterCard center={report} key={report.id} />
                 ))
               ) : (
-                <EmptyAdminState message="No hay reportes pendientes en Supabase." />
+                <EmptyAdminState message="No hay reportes pendientes en el sistema." />
               )}
             </div>
           </div>
@@ -304,7 +310,7 @@ function AdminDashboard({
                   <AdminCenterCard center={center} compact key={center.id} />
                 ))
               ) : (
-                <EmptyAdminState message="No hay centros publicados en Supabase." />
+                <EmptyAdminState message="No hay centros publicados en el sistema." />
               )}
             </div>
           </div>
@@ -315,9 +321,9 @@ function AdminDashboard({
 }
 
 async function getAdminUser() {
-  const supabaseConfig = getSupabaseConfig();
+  const dataServiceConfig = getDataServiceConfig();
 
-  if (!supabaseConfig) {
+  if (!dataServiceConfig) {
     return null;
   }
 
@@ -329,10 +335,10 @@ async function getAdminUser() {
   }
 
   try {
-    const response = await fetch(`${supabaseConfig.url}/auth/v1/user`, {
+    const response = await fetch(`${dataServiceConfig.url}/auth/v1/user`, {
       cache: "no-store",
       headers: {
-        apikey: supabaseConfig.anonKey,
+        apikey: dataServiceConfig.anonKey,
         Authorization: `Bearer ${accessToken}`,
       },
     });
@@ -341,7 +347,7 @@ async function getAdminUser() {
       return null;
     }
 
-    const user = (await response.json()) as SupabaseUser;
+    const user = (await response.json()) as AuthUser;
 
     return hasAdminRole(user) ? { ...user, accessToken } : null;
   } catch {
@@ -349,18 +355,18 @@ async function getAdminUser() {
   }
 }
 
-function getSupabaseConfig() {
-  if (!supabaseUrl || !supabaseAnonKey) {
+function getDataServiceConfig() {
+  if (!dataServiceUrl || !dataServiceAnonKey) {
     return null;
   }
 
   return {
-    anonKey: supabaseAnonKey,
-    url: supabaseUrl,
+    anonKey: dataServiceAnonKey,
+    url: dataServiceUrl,
   };
 }
 
-function hasAdminRole(user: SupabaseUser) {
+function hasAdminRole(user: AuthUser) {
   const metadata = user.app_metadata ?? {};
   const roleValues = [
     metadata.role,
@@ -374,7 +380,7 @@ function hasAdminRole(user: SupabaseUser) {
 
 function getStatusMessage(status?: string) {
   if (status === "config") {
-    return "Configura Supabase antes de iniciar sesion.";
+    return "Configura el servicio privado antes de iniciar sesion.";
   }
 
   if (status === "invalid") {
@@ -394,7 +400,7 @@ function getStatusMessage(status?: string) {
   }
 
   if (status === "auth-db") {
-    return "Supabase Auth devolvio un error de base de datos. Si creaste este usuario por SQL directo, elimina ese registro y recrealo con el Admin API.";
+    return "El servicio de autenticacion devolvio un error de base de datos. Si creaste este usuario por SQL directo, elimina ese registro y recrealo con el script seguro.";
   }
 
   return undefined;

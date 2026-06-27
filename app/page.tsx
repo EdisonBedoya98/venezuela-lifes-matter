@@ -1,5 +1,5 @@
 import { AidMapExperience } from "@/app/_components/aid-map-experience";
-import { getPublicMapData } from "@/app/_lib/supabase-data";
+import { getPublicMapData } from "@/app/_lib/data-service";
 
 export const dynamic = "force-dynamic";
 

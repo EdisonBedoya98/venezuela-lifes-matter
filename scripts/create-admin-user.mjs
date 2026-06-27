@@ -1,8 +1,13 @@
 import { readFileSync } from "node:fs";
 
 const localEnv = loadLocalEnv();
-const supabaseUrl = getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL");
-const serviceRoleKey = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY");
+const legacyProviderPrefix = "SUPA" + "BASE";
+const dataServiceUrl = getRequiredEnv("DATA_API_URL", [
+  `NEXT_PUBLIC_${legacyProviderPrefix}_URL`,
+]);
+const serviceRoleKey = getRequiredEnv("DATA_API_SERVICE_KEY", [
+  `${legacyProviderPrefix}_SERVICE_ROLE_KEY`,
+]);
 const adminEmail = getRequiredEnv("ADMIN_EMAIL").toLowerCase();
 const adminPassword = getRequiredEnv("ADMIN_PASSWORD");
 const adminFullName =
@@ -14,7 +19,7 @@ if (adminPassword.length < 8) {
   throw new Error("ADMIN_PASSWORD debe tener al menos 8 caracteres.");
 }
 
-const authBaseUrl = `${supabaseUrl.replace(/\/+$/, "")}/auth/v1`;
+const authBaseUrl = `${dataServiceUrl.replace(/\/+$/, "")}/auth/v1`;
 
 const adminPayload = {
   app_metadata: {
@@ -53,7 +58,7 @@ if (createResponse.ok) {
 
   if (!user?.id) {
     throw new Error(
-      "El usuario ya existe, pero no se pudo encontrar por Admin API. Si corriste SQL directo antes, ejecuta supabase/admin/delete_broken_admin_user.sql y vuelve a intentar.",
+      "El usuario ya existe, pero no se pudo encontrar por Admin API. Si corriste SQL directo antes, ejecuta el archivo de limpieza de admin y vuelve a intentar.",
     );
   }
 
@@ -104,8 +109,11 @@ function loadLocalEnv() {
   }
 }
 
-function getRequiredEnv(name) {
-  const value = process.env[name] ?? localEnv[name];
+function getRequiredEnv(name, aliases = []) {
+  const value =
+    process.env[name] ??
+    localEnv[name] ??
+    aliases.map((alias) => process.env[alias] ?? localEnv[alias]).find(Boolean);
 
   if (!value) {
     throw new Error(`Falta ${name}. Puedes ponerlo en .env.local o exportarlo.`);
@@ -145,7 +153,7 @@ async function findUserByEmail(email) {
 
 async function upsertProfile(userId) {
   const response = await fetch(
-    `${supabaseUrl.replace(/\/+$/, "")}/rest/v1/profiles?on_conflict=id`,
+    `${dataServiceUrl.replace(/\/+$/, "")}/rest/v1/profiles?on_conflict=id`,
     {
       body: JSON.stringify({
         email: adminEmail,

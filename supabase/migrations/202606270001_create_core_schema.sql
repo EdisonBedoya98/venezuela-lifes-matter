@@ -1,5 +1,5 @@
 -- Core schema for Venezuela Lives Matter.
--- Run this migration before seeding catalog data or connecting the app to Supabase.
+-- Run this migration before seeding catalog data or connecting the app.
 
 create extension if not exists pgcrypto with schema extensions;
 

@@ -36,7 +36,7 @@ import {
 } from "react";
 import { subscribeToUpdatesAction } from "@/app/_actions/newsletter";
 import { GoogleAidMap } from "@/app/_components/google-aid-map";
-import type { UpdatesActionState } from "@/app/_lib/supabase-data";
+import type { UpdatesActionState } from "@/app/_lib/data-service";
 import type {
   AidCategory,
   AidCategoryId,
@@ -1403,7 +1403,7 @@ function EmptyCenterPanel({ hasAnyCenters }: { hasAnyCenters: boolean }) {
       <p className="mt-3 text-sm leading-6 text-[#49656f]">
         {hasAnyCenters
           ? "Puedes ampliar la busqueda o reportar un punto para que el equipo lo verifique."
-          : "El mapa queda limpio hasta que el equipo apruebe centros reales desde Supabase."}
+          : "El mapa queda limpio hasta que el equipo apruebe centros reales."}
       </p>
       <Link
         className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#17324d] px-3 text-sm font-black text-white transition hover:-translate-y-0.5"

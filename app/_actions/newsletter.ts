@@ -3,7 +3,7 @@
 import {
   subscribeToUpdates,
   type UpdatesActionState,
-} from "@/app/_lib/supabase-data";
+} from "@/app/_lib/data-service";
 
 export async function subscribeToUpdatesAction(
   _previousState: UpdatesActionState,
