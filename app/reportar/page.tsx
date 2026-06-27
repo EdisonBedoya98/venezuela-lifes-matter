@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { ArrowLeft, ClipboardCheck, LockKeyhole } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ClipboardCheck,
+  LockKeyhole,
+  MapPin,
+  PlusCircle,
+  X,
+} from "lucide-react";
 import { redirect } from "next/navigation";
 import { AttentionDaysField } from "@/app/_components/attention-days-field";
 import {
@@ -79,13 +87,9 @@ export default async function ReportPage({
             </div>
           </div>
 
-          {statusMessage ? (
+          {statusMessage && !received ? (
             <div
-              className={`mt-6 rounded-[8px] border p-4 text-sm font-bold text-[#17324d] ${
-                received
-                  ? "border-[#5cb85c]/30 bg-[#dff4dd]"
-                  : "border-[#ef6f61]/30 bg-[#ffe2dd]"
-              }`}
+              className="mt-6 rounded-[8px] border border-[#ef6f61]/30 bg-[#ffe2dd] p-4 text-sm font-bold text-[#17324d]"
             >
               {statusMessage}
             </div>
@@ -190,6 +194,8 @@ export default async function ReportPage({
           </form>
         </section>
       </div>
+
+      {received ? <SubmissionSuccessModal /> : null}
     </main>
   );
 }
@@ -220,4 +226,61 @@ function getStatusMessage(status?: string) {
   }
 
   return undefined;
+}
+
+function SubmissionSuccessModal() {
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-end bg-[#17324d]/45 px-3 py-3 backdrop-blur-sm sm:place-items-center">
+      <section
+        aria-labelledby="submission-success-title"
+        aria-modal="true"
+        className="w-full max-w-lg rounded-[12px] border border-white/70 bg-[#fffbf2] p-4 text-[#17324d] shadow-[0_24px_90px_rgba(23,50,77,0.28)] sm:p-5"
+        role="dialog"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="grid size-12 shrink-0 place-items-center rounded-[8px] bg-[#dff4dd] text-[#17324d]">
+            <CheckCircle2 aria-hidden="true" size={25} />
+          </div>
+          <Link
+            aria-label="Cerrar confirmacion"
+            className="grid size-10 shrink-0 place-items-center rounded-[8px] border border-[#17324d]/10 bg-white text-[#17324d]"
+            href="/reportar"
+          >
+            <X aria-hidden="true" size={18} />
+          </Link>
+        </div>
+
+        <p className="mt-5 text-xs font-black uppercase text-[#ef6f61]">
+          Verificacion enviada
+        </p>
+        <h2
+          className="mt-1 text-3xl font-black leading-tight"
+          id="submission-success-title"
+        >
+          Centro enviado satisfactoriamente
+        </h2>
+        <p className="mt-3 text-sm font-bold leading-6 text-[#49656f]">
+          Recibimos la informacion y el pin del centro. El equipo revisara los
+          datos y, si todo esta correcto, lo publicara en el mapa.
+        </p>
+
+        <div className="mt-5 grid gap-2 sm:grid-cols-2">
+          <Link
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[8px] bg-[#17324d] px-4 text-sm font-black text-white transition hover:-translate-y-0.5"
+            href="/"
+          >
+            <MapPin aria-hidden="true" size={17} />
+            Volver al mapa
+          </Link>
+          <Link
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[8px] border border-[#17324d]/15 bg-white px-4 text-sm font-black text-[#17324d] transition hover:-translate-y-0.5"
+            href="/reportar"
+          >
+            <PlusCircle aria-hidden="true" size={17} />
+            Registrar otro centro
+          </Link>
+        </div>
+      </section>
+    </div>
+  );
 }
