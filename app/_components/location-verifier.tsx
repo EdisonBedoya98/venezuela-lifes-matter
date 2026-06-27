@@ -351,17 +351,17 @@ export function LocationVerifier() {
       </div>
 
       {result ? (
-        <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="grid gap-3 rounded-[8px] border border-[#17324d]/10 bg-white p-3">
-            <div>
+        <div className="grid min-w-0 gap-3 sm:gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="grid min-w-0 gap-3 rounded-[8px] border border-[#17324d]/10 bg-white p-3">
+            <div className="min-w-0">
               <p className="text-xs font-black uppercase text-[#617781]">
                 Direccion Google
               </p>
-              <p className="mt-1 text-sm font-black leading-6 text-[#17324d]">
+              <p className="mt-1 break-words text-sm font-black leading-6 text-[#17324d]">
                 {result.formattedAddress}
               </p>
             </div>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid min-w-0 gap-2 sm:grid-cols-2">
               <PinDetail label="Latitud" value={formatCoordinate(result.coordinates.lat)} />
               <PinDetail label="Longitud" value={formatCoordinate(result.coordinates.lng)} />
               <PinDetail label="Precision" value={result.locationType} />
@@ -370,22 +370,21 @@ export function LocationVerifier() {
                 value={result.needsReview ? "Admin revisa" : "Lista"}
               />
             </div>
-            <p className="text-xs font-semibold leading-5 text-[#617781]">
+            <p className="break-all text-xs font-semibold leading-5 text-[#617781]">
               Place ID: {result.placeId}
             </p>
           </div>
 
-          <div className="overflow-hidden rounded-[8px] border border-[#17324d]/10 bg-[#d7f8f2]">
+          <div className="relative isolate h-[180px] min-w-0 overflow-hidden rounded-[8px] border border-[#17324d]/10 bg-[#d7f8f2] sm:h-64">
             {googleMapsApiKey ? (
               <div
                 aria-label="Vista previa del pin propuesto"
-                className="h-64 w-full"
+                className="absolute inset-0 size-full"
                 ref={mapElementRef}
               />
             ) : (
-              <div className="grid h-64 place-items-center p-4 text-center text-sm font-black text-[#17324d]">
-                Falta NEXT_PUBLIC_GOOGLE_MAPS_API_KEY para mostrar el mapa de
-                confirmacion.
+              <div className="grid size-full place-items-center p-4 text-center text-sm font-black text-[#17324d]">
+                Falta configurar la llave de mapas para mostrar la confirmacion.
               </div>
             )}
           </div>
@@ -397,11 +396,11 @@ export function LocationVerifier() {
 
 function PinDetail({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[8px] bg-[#fffbf2] p-2">
+    <div className="min-w-0 rounded-[8px] bg-[#fffbf2] p-2">
       <p className="text-[11px] font-black uppercase text-[#617781]">{label}</p>
-      <p className="mt-0.5 flex items-center gap-1.5 text-sm font-black text-[#17324d]">
-        <MapPin aria-hidden="true" size={14} />
-        {value}
+      <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-sm font-black text-[#17324d]">
+        <MapPin aria-hidden="true" className="shrink-0" size={14} />
+        <span className="min-w-0 truncate">{value}</span>
       </p>
     </div>
   );
